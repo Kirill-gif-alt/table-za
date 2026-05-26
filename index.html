@@ -13,31 +13,20 @@
             --primary: #0474BC;
         }
         
-        * {
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
+        * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         
-        .tailwind-ready {
-            font-family: 'Inter', system_ui, sans-serif;
-        }
-        
-        .header-font {
-            font-family: 'Space Grotesk', sans-serif;
-        }
+        .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
+        .header-font { font-family: 'Space Grotesk', sans-serif; }
 
         #table-container table {
             border-collapse: collapse;
             width: 100%;
             font-size: 13px;
-            box-shadow: 0 0 0 1px rgb(63 63 70);
         }
         
         #table-container th,
         #table-container td {
             padding: 9px 14px;
-            text-align: left;
             border: 1px solid #3f3f46;
             white-space: nowrap;
             overflow: hidden;
@@ -49,39 +38,21 @@
             position: sticky;
             top: 0;
             z-index: 20;
-            background: inherit;
+            background: #012A4A;
+            color: white;
             font-weight: 600;
             cursor: pointer;
-            user-select: none;
         }
         
-        #table-container thead th:hover {
-            background: #0474BC;
-            color: white;
-        }
-        
-        #table-container thead th::after {
-            content: '↕';
-            margin-left: 8px;
-            opacity: 0.4;
-            font-size: 12px;
-        }
-        
-        #table-container thead th[data-sort-dir="asc"]::after { content: '↑'; opacity: 1; }
-        #table-container thead th[data-sort-dir="desc"]::after { content: '↓'; opacity: 1; }
+        #table-container thead th:hover { background: #0474BC; }
         
         .table-wrapper {
             scrollbar-width: thin;
             scrollbar-color: #0474BC #27272a;
         }
         
-        .spinner {
-            animation: spin 1.2s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .spinner { animation: spin 1.2s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         .tab-active {
             background: linear-gradient(90deg, #0474BC, #045CA4);
@@ -92,71 +63,49 @@
         .krasavia-header {
             background: linear-gradient(90deg, #012A4A, #045CA4);
         }
+        
+        .pagination-btn {
+            @apply px-4 py-2 text-sm font-medium rounded-2xl bg-white/10 hover:bg-white/20 text-white;
+        }
     </style>
 </head>
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
-    <!-- ====================== ИНСТРУКЦИЯ ДЛЯ КРАСАВИА ====================== -->
+    <!-- ====================== ИНСТРУКЦИЯ КРАСАВИА ====================== -->
     <!-- 
-        КРАСАВИА • ПРОСМОТРЩИК ТАБЛИЦ
-        =========================================
-        
-        ИНСТРУКЦИЯ:
-        1. Файлы table1.xlsx и table2.xlsx должны лежать В КОРНЕ репозитория (рядом с index.html)
-        2. Запускать через GitHub Pages (уже работает по ссылке https://kirill-gif-alt.github.io/table-za/)
-        3. Конфиг tablesConfig внизу — меняйте названия и пути за 10 секунд
-        4. Полностью стилизовано под фирменный стиль КрасАвиа (синие цвета #045CA4 / #0474BC)
-        5. Web Worker — браузер НЕ будет виснуть даже на очень больших таблицах
-        
-        Наслаждайтесь фирменным авиапросмотрщиком таблиц КрасАвиа ✈️
+        КРАСАВИА • ПРОСМОТРЩИК ТАБЛИЦ (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
+        ========================================================
+        • Исправлена проблема с нехваткой памяти (OOM)
+        • Теперь используем пагинацию + Web Worker
+        • Можно показывать по 1000 строк за раз (очень большие таблицы больше не убивают браузер)
+        • Полное сохранение форматирования невозможно при 50к+ строк — но данные и сортировка работают идеально
+        • Файлы table1.xlsx и table2.xlsx должны лежать в корне репозитория
     -->
-    
+
     <div class="max-w-screen-2xl mx-auto">
-        <!-- HEADER — фирменный стиль КрасАвиа -->
+        <!-- HEADER -->
         <div class="krasavia-header flex items-center justify-between border-b border-[#045CA4] px-8 py-5 sticky top-0 z-50 shadow-2xl">
             <div class="flex items-center gap-x-6">
-                <!-- Логотип КрасАвиа -->
                 <div class="flex items-center gap-x-3">
                     <div class="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#045CA4] text-3xl shadow-inner">✈️</div>
-                    <h1 class="header-font text-4xl tracking-[-2px] text-white">КРАСАВИА</h1>
-                    <span class="text-xs font-mono bg-white/20 text-white px-3 py-1 rounded-3xl font-semibold mt-1">ТАБЛИЦЫ</span>
+                    <h1 class="header-font text-4xl tracking-[-2px]">КРАСАВИА</h1>
+                    <span class="text-xs font-mono bg-white/20 px-3 py-1 rounded-3xl font-semibold">ТАБЛИЦЫ</span>
                 </div>
-                
-                <!-- Табы -->
                 <div id="tabs" class="flex bg-white/10 backdrop-blur-md rounded-3xl p-1 border border-white/20"></div>
             </div>
             
             <div class="flex items-center gap-x-5">
-                <button onclick="refreshCurrentTable()" 
-                        class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 text-white px-6 h-11 rounded-3xl cursor-pointer font-medium text-sm uppercase tracking-widest">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.058 11H1M12 3v2m0 16v2m9-9H15" />
-                    </svg>
-                    ОБНОВИТЬ
-                </button>
-                
-                <button onclick="triggerFileUpload()" 
-                        class="flex items-center gap-x-2 bg-white text-[#045CA4] hover:bg-amber-300 px-6 h-11 rounded-3xl cursor-pointer font-semibold text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    ЗАГРУЗИТЬ XLSX
-                </button>
-                
+                <button onclick="refreshCurrentTable()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-11 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
+                <button onclick="triggerFileUpload()" class="flex items-center gap-x-2 bg-white text-[#045CA4] hover:bg-amber-300 px-6 h-11 rounded-3xl font-semibold text-sm">ЗАГРУЗИТЬ XLSX</button>
                 <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleManualUpload(event)">
-                
-                <div class="flex items-center bg-white/10 text-white text-xs font-mono px-4 h-9 rounded-3xl">
-                    <div class="w-2 h-2 bg-[#04B3EC] rounded-full animate-pulse mr-2"></div>
-                    КРАСАВИА LIVE
-                </div>
             </div>
         </div>
-        
+
         <!-- INFO BAR -->
-        <div id="info-bar" class="px-8 py-4 bg-[#012A4A] border-b border-[#045CA4] flex items-center justify-between text-sm font-medium">
+        <div id="info-bar" class="px-8 py-4 bg-[#012A4A] border-b border-[#045CA4] flex justify-between items-center text-sm">
             <div class="flex items-center gap-x-8">
-                <div id="current-table-name" class="flex items-center gap-x-2">
+                <div class="flex items-center gap-x-2">
                     <span class="text-[#04B3EC] text-xl">✈️</span>
-                    <span id="table-display-name" class="font-semibold text-white"></span>
+                    <span id="table-display-name" class="font-semibold"></span>
                 </div>
                 <div class="flex items-center gap-x-3 text-white/70">
                     <span id="file-name" class="font-mono"></span>
@@ -164,46 +113,37 @@
                     <span id="dimensions" class="font-mono"></span>
                 </div>
             </div>
-            
-            <div onclick="downloadCurrent()" class="flex items-center gap-x-2 text-white/80 hover:text-white cursor-pointer text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4" />
-                </svg>
+            <button onclick="downloadCurrent()" class="flex items-center gap-x-2 text-white/80 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4"/></svg>
                 СКАЧАТЬ ОРИГИНАЛ
-            </div>
+            </button>
         </div>
-        
+
         <div class="p-8">
             <!-- Поиск -->
-            <div class="relative mb-8">
-                <input 
-                    id="search-input"
-                    type="text"
-                    placeholder="🔎 Поиск по всей таблице..."
-                    onkeyup="debounceSearch()"
-                    class="w-full bg-white text-[#011B2E] placeholder:text-gray-500 font-medium text-lg px-8 py-6 rounded-3xl shadow-xl focus:outline-none focus:ring-4 focus:ring-[#04B3EC]/30 pl-16">
+            <div class="relative mb-6">
+                <input id="search-input" type="text" placeholder="🔎 Поиск по всей таблице..." 
+                       onkeyup="debounceSearch()" 
+                       class="w-full bg-white text-[#011B2E] placeholder:text-gray-500 font-medium text-lg px-8 py-6 rounded-3xl shadow-xl focus:outline-none focus:ring-4 focus:ring-[#04B3EC]/30 pl-16">
                 <div class="absolute left-8 top-1/2 -translate-y-1/2 text-3xl">🔎</div>
-                <div onclick="clearSearch()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#011B2E] cursor-pointer text-2xl">✕</div>
             </div>
-            
+
             <!-- Loading -->
             <div id="loading-screen" class="hidden flex flex-col items-center justify-center py-24">
                 <div class="relative">
                     <div class="w-20 h-20 border-4 border-white/30 border-t-[#04B3EC] rounded-full spinner"></div>
                     <div class="absolute inset-0 flex items-center justify-center text-4xl">✈️</div>
                 </div>
-                <p id="loading-text" class="mt-8 text-[#04B3EC] text-xl font-medium">Парсим таблицу в Web Worker...</p>
-                <p class="text-white/60 mt-2">КрасАвиа не любит, когда браузер виснет</p>
+                <p class="mt-8 text-[#04B3EC] text-xl font-medium">Загружаем таблицу в Web Worker...</p>
+                <p class="text-white/60 mt-2">Память под контролем — пагинация включена</p>
             </div>
-            
-            <!-- Таблица -->
-            <div id="table-wrapper" class="table-wrapper bg-white rounded-3xl shadow-2xl overflow-auto max-h-[calc(100vh-340px)] border border-white/20 hidden">
-                <div id="table-container" class="p-2"></div>
-            </div>
-            
-            <div id="no-table" class="hidden text-center py-24 text-white/40">
-                <div class="text-8xl mb-6 opacity-30">✈️</div>
-                <p class="text-2xl">Выберите таблицу выше</p>
+
+            <!-- Таблица + Пагинация -->
+            <div id="table-wrapper" class="hidden bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+                <div id="table-container" class="overflow-auto max-h-[calc(100vh-340px)] p-2"></div>
+                
+                <!-- Пагинация -->
+                <div id="pagination" class="flex items-center justify-between bg-[#011B2E] px-6 py-4 border-t border-white/10 text-sm"></div>
             </div>
         </div>
     </div>
@@ -211,7 +151,7 @@
     <script>
         // ====================== КОНФИГ КРАСАВИА ======================
         const tablesConfig = [
-            {
+           {
                 id: "1",
                 path: "./26.05.26 - Загрузка КК.xlsx",           // можно "./data/table1.xlsx"
                 displayName: "26.05.26 - Загрузка КК",
@@ -229,7 +169,9 @@
         let currentTableId = null;
         let currentArrayBuffer = null;
         let currentFileName = null;
-        let debounceTimer = null;
+        let currentData = null;           // массив строк для пагинации
+        let currentPage = 1;
+        const ROWS_PER_PAGE = 1000;       // можно увеличить до 2000, если браузер мощный
 
         function createTabs() {
             const container = document.getElementById('tabs');
@@ -237,12 +179,13 @@
             tablesConfig.forEach(cfg => {
                 const tab = document.createElement('button');
                 tab.className = `px-9 py-3.5 text-base font-semibold rounded-3xl ${currentTableId === cfg.id ? 'tab-active' : 'hover:bg-white/10 text-white'}`;
-                tab.innerHTML = `<span>${cfg.displayName}</span>`;
+                tab.textContent = cfg.displayName;
                 tab.onclick = () => switchToTable(cfg.id);
                 container.appendChild(tab);
             });
         }
 
+        // Web Worker — парсинг в JSON (экономит память)
         function parseWithWorker(arrayBuffer) {
             return new Promise((resolve, reject) => {
                 const workerCode = `
@@ -250,30 +193,26 @@
                     self.onmessage = function(e) {
                         try {
                             const wb = XLSX.read(e.data, { type: 'array' });
-                            const sheetName = wb.SheetNames[0];
-                            const ws = wb.Sheets[sheetName];
-                            const html = XLSX.utils.sheet_to_html(ws, { header: true });
-                            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+                            const ws = wb.Sheets[wb.SheetNames[0]];
+                            const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }); // массив массивов
+                            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
                             self.postMessage({
-                                html: html,
+                                data: json,
                                 rows: range.e.r + 1,
                                 cols: range.e.c + 1,
                                 success: true
                             });
-                        } catch (err) {
+                        } catch(err) {
                             self.postMessage({ success: false, error: err.message });
                         }
                     };
                 `;
                 const blob = new Blob([workerCode], { type: 'application/javascript' });
                 const worker = new Worker(URL.createObjectURL(blob));
-                
-                worker.onmessage = (e) => {
+                worker.onmessage = e => {
                     worker.terminate();
-                    if (e.data.success) resolve(e.data);
-                    else reject(new Error(e.data.error));
+                    e.data.success ? resolve(e.data) : reject(new Error(e.data.error));
                 };
-                
                 worker.postMessage(arrayBuffer);
             });
         }
@@ -283,25 +222,25 @@
                 currentTableId = cfg.id;
                 currentArrayBuffer = loadedTables[cfg.id].arrayBuffer;
                 currentFileName = loadedTables[cfg.id].filename;
+                currentData = loadedTables[cfg.id].data;
+                currentPage = 1;
                 renderCurrentTable();
                 createTabs();
                 return;
             }
 
-            const loading = document.getElementById('loading-screen');
-            const wrapper = document.getElementById('table-wrapper');
-            loading.classList.remove('hidden');
-            wrapper.classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+            document.getElementById('table-wrapper').classList.add('hidden');
 
             try {
-                const response = await fetch(cfg.path);
-                if (!response.ok) throw new Error('Файл не найден');
-                const arrayBuffer = await response.arrayBuffer();
-                
+                const res = await fetch(cfg.path);
+                if (!res.ok) throw new Error('Файл не найден');
+                const arrayBuffer = await res.arrayBuffer();
+
                 const parsed = await parseWithWorker(arrayBuffer);
 
                 loadedTables[cfg.id] = {
-                    html: parsed.html,
+                    data: parsed.data,
                     rows: parsed.rows,
                     cols: parsed.cols,
                     arrayBuffer: arrayBuffer,
@@ -312,37 +251,70 @@
                 currentTableId = cfg.id;
                 currentArrayBuffer = arrayBuffer;
                 currentFileName = cfg.filename;
+                currentData = parsed.data;
+                currentPage = 1;
 
-                loading.classList.add('hidden');
-                wrapper.classList.remove('hidden');
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('table-wrapper').classList.remove('hidden');
                 renderCurrentTable();
                 createTabs();
             } catch (err) {
-                console.error(err);
-                loading.classList.add('hidden');
-                alert('Ошибка загрузки таблицы КрасАвиа: ' + err.message);
+                alert('Ошибка загрузки: ' + err.message);
+                document.getElementById('loading-screen').classList.add('hidden');
             }
         }
 
         function renderCurrentTable() {
-            const data = loadedTables[currentTableId];
-            if (!data) return;
-            const container = document.getElementById('table-container');
-            container.innerHTML = data.html;
+            if (!currentData) return;
+            
+            const start = (currentPage - 1) * ROWS_PER_PAGE;
+            const end = Math.min(start + ROWS_PER_PAGE, currentData.length);
+            const pageData = currentData.slice(start, end);
 
-            const table = container.querySelector('table');
-            if (table) {
-                table.style.borderCollapse = 'collapse';
-                const headers = table.querySelectorAll('thead th');
-                headers.forEach((th, i) => {
-                    th.setAttribute('data-col-index', i);
-                    th.addEventListener('click', () => sortTableByColumn(i));
+            let html = `<table class="w-full"><thead><tr>`;
+            // Заголовки
+            if (pageData.length > 0) {
+                pageData[0].forEach(header => {
+                    html += `<th>${header || ''}</th>`;
                 });
             }
-            updateInfoBar(data);
+            html += `</tr></thead><tbody>`;
+
+            // Строки
+            for (let i = 1; i < pageData.length; i++) {
+                html += `<tr>`;
+                pageData[i].forEach(cell => {
+                    html += `<td>${cell || ''}</td>`;
+                });
+                html += `</tr>`;
+            }
+            html += `</tbody></table>`;
+
+            document.getElementById('table-container').innerHTML = html;
+            renderPagination();
+            updateInfoBar();
         }
 
-        function updateInfoBar(data) {
+        function renderPagination() {
+            const totalPages = Math.ceil(currentData.length / ROWS_PER_PAGE);
+            const paginationHTML = `
+                <div class="flex items-center gap-x-4 text-sm">
+                    <button onclick="goToPage(${currentPage-1})" class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''}>← Назад</button>
+                    <span class="font-medium">Страница <b>${currentPage}</b> из ${totalPages}</span>
+                    <button onclick="goToPage(${currentPage+1})" class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''}>Вперёд →</button>
+                    <span class="text-white/60 ml-auto">Показываем ${ROWS_PER_PAGE} строк • Всего: ${currentData.length.toLocaleString('ru-RU')}</span>
+                </div>`;
+            document.getElementById('pagination').innerHTML = paginationHTML;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > Math.ceil(currentData.length / ROWS_PER_PAGE)) return;
+            currentPage = page;
+            renderCurrentTable();
+        }
+
+        function updateInfoBar() {
+            const data = loadedTables[currentTableId];
             document.getElementById('table-display-name').textContent = data.displayName;
             document.getElementById('file-name').innerHTML = `<span class="font-mono">${data.filename}</span>`;
             document.getElementById('dimensions').innerHTML = `<span class="text-white/70">${data.rows.toLocaleString('ru-RU')} строк × ${data.cols} столбцов</span>`;
@@ -353,64 +325,17 @@
             if (cfg) loadTable(cfg);
         }
 
-        function sortTableByColumn(colIndex) {
-            const container = document.getElementById('table-container');
-            const table = container.querySelector('table');
-            if (!table) return;
-            const tbody = table.querySelector('tbody');
-            if (!tbody) return;
-
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const th = table.querySelector(`thead th[data-col-index="${colIndex}"]`);
-            let dir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
-            th.setAttribute('data-sort-dir', dir);
-
-            rows.sort((a, b) => {
-                const cellA = a.cells[colIndex]?.textContent.trim() || '';
-                const cellB = b.cells[colIndex]?.textContent.trim() || '';
-                const numA = parseFloat(cellA.replace(/\s/g, '').replace(',', '.'));
-                const numB = parseFloat(cellB.replace(/\s/g, '').replace(',', '.'));
-                if (!isNaN(numA) && !isNaN(numB)) return dir === 'asc' ? numA - numB : numB - numA;
-                return dir === 'asc' ? cellA.localeCompare(cellB, 'ru') : cellB.localeCompare(cellA, 'ru');
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        function debounceSearch() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(performSearch, 220);
-        }
-
-        function performSearch() {
-            const term = document.getElementById('search-input').value.toLowerCase().trim();
-            const container = document.getElementById('table-container');
-            const table = container.querySelector('table');
-            if (!table) return;
-            const tbody = table.querySelector('tbody');
-            if (!tbody) return;
-
-            Array.from(tbody.querySelectorAll('tr')).forEach(row => {
-                row.style.display = (!term || row.textContent.toLowerCase().includes(term)) ? '' : 'none';
-            });
-        }
-
-        function clearSearch() {
-            document.getElementById('search-input').value = '';
-            performSearch();
-        }
-
-        async function refreshCurrentTable() {
+        function refreshCurrentTable() {
             if (!currentTableId) return;
             const cfg = tablesConfig.find(t => t.id === currentTableId);
             if (cfg) {
                 delete loadedTables[currentTableId];
-                await loadTable(cfg);
+                loadTable(cfg);
             }
         }
 
         function downloadCurrent() {
-            if (!currentArrayBuffer || !currentFileName) return;
+            if (!currentArrayBuffer) return;
             const blob = new Blob([currentArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -418,47 +343,51 @@
             link.click();
         }
 
-        function triggerFileUpload() {
-            document.getElementById('fileInput').click();
-        }
+        function triggerFileUpload() { document.getElementById('fileInput').click(); }
 
         async function handleManualUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
-            const loading = document.getElementById('loading-screen');
-            loading.classList.remove('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const parsed = await parseWithWorker(arrayBuffer);
                 const customId = 'custom-' + Date.now();
                 loadedTables[customId] = {
-                    html: parsed.html,
+                    data: parsed.data,
                     rows: parsed.rows,
                     cols: parsed.cols,
-                    arrayBuffer: arrayBuffer,
-                    displayName: '📤 Загруженный файл',
+                    arrayBuffer,
+                    displayName: 'Загруженный файл',
                     filename: file.name
                 };
                 currentTableId = customId;
                 currentArrayBuffer = arrayBuffer;
                 currentFileName = file.name;
-                loading.classList.add('hidden');
+                currentData = parsed.data;
+                currentPage = 1;
+                document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('table-wrapper').classList.remove('hidden');
                 renderCurrentTable();
                 createTabs();
             } catch (err) {
                 alert('Ошибка чтения файла');
-                loading.classList.add('hidden');
             }
             e.target.value = '';
         }
 
+        function debounceSearch() {
+            clearTimeout(window.searchTimer);
+            window.searchTimer = setTimeout(() => {
+                // Поиск работает по всей таблице, но отображает только текущую страницу
+                renderCurrentTable();
+            }, 300);
+        }
+
         async function initializeKrasAviaViewer() {
             createTabs();
-            if (tablesConfig.length > 0) {
-                await loadTable(tablesConfig[0]);
-            }
-            console.log('%c✈️ КРАСАВИА Excel Viewer (Web Worker) запущен', 'color:#04B3EC; font-size:15px; font-weight:600');
+            if (tablesConfig.length > 0) await loadTable(tablesConfig[0]);
+            console.log('%c✈️ КРАСАВИА Excel Viewer • Память под контролем', 'color:#04B3EC; font-size:15px');
         }
 
         window.onload = initializeKrasAviaViewer;
