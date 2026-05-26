@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GodMod Excel • Топ-1 Viewer</title>
+    <title>КРАСАВИА • Просмотр таблиц</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
         
         :root {
-            --tw-color-primary: #00ff9d;
+            --primary: #0474BC;
         }
         
         * {
@@ -36,13 +36,13 @@
         
         #table-container th,
         #table-container td {
-            padding: 8px 12px;
+            padding: 9px 14px;
             text-align: left;
             border: 1px solid #3f3f46;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 240px;
+            max-width: 260px;
         }
         
         #table-container thead th {
@@ -56,38 +56,27 @@
         }
         
         #table-container thead th:hover {
-            filter: brightness(1.15);
+            background: #0474BC;
+            color: white;
         }
         
         #table-container thead th::after {
             content: '↕';
-            margin-left: 6px;
-            opacity: 0.3;
-            font-size: 11px;
+            margin-left: 8px;
+            opacity: 0.4;
+            font-size: 12px;
         }
         
-        #table-container thead th[data-sort-dir="asc"]::after {
-            content: '↑';
-            opacity: 1;
-        }
-        
-        #table-container thead th[data-sort-dir="desc"]::after {
-            content: '↓';
-            opacity: 1;
-        }
+        #table-container thead th[data-sort-dir="asc"]::after { content: '↑'; opacity: 1; }
+        #table-container thead th[data-sort-dir="desc"]::after { content: '↓'; opacity: 1; }
         
         .table-wrapper {
             scrollbar-width: thin;
-            scrollbar-color: #00ff9d #27272a;
-        }
-        
-        .table-wrapper::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
+            scrollbar-color: #0474BC #27272a;
         }
         
         .spinner {
-            animation: spin 1s linear infinite;
+            animation: spin 1.2s linear infinite;
         }
         
         @keyframes spin {
@@ -95,171 +84,132 @@
         }
         
         .tab-active {
-            background: linear-gradient(90deg, #00ff9d, #00cc7a);
-            color: #000;
-            box-shadow: 0 0 25px -5px rgb(0 255 157);
+            background: linear-gradient(90deg, #0474BC, #045CA4);
+            color: #fff;
+            box-shadow: 0 0 25px -3px rgb(4 116 188);
+        }
+        
+        .krasavia-header {
+            background: linear-gradient(90deg, #012A4A, #045CA4);
         }
     </style>
 </head>
-<body class="tailwind-ready bg-zinc-950 text-zinc-100 min-h-screen">
-    <!-- ====================== БОЛЬШОЙ КОММЕНТАРИЙ-ИНСТРУКЦИЯ ====================== -->
+<body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
+    <!-- ====================== ИНСТРУКЦИЯ ДЛЯ КРАСАВИА ====================== -->
     <!-- 
-        GODMOD EXCEL VIEWER — ТОП-1 БРАУЗЕРНЫЙ ПРОСМОТРЩИК XLSX
-        ========================================================
+        КРАСАВИА • ПРОСМОТРЩИК ТАБЛИЦ
+        =========================================
         
-        ИНСТРУКЦИЯ (прочитай за 15 секунд):
+        ИНСТРУКЦИЯ:
+        1. Файлы table1.xlsx и table2.xlsx должны лежать В КОРНЕ репозитория (рядом с index.html)
+        2. Запускать через GitHub Pages (уже работает по ссылке https://kirill-gif-alt.github.io/table-za/)
+        3. Конфиг tablesConfig внизу — меняйте названия и пути за 10 секунд
+        4. Полностью стилизовано под фирменный стиль КрасАвиа (синие цвета #045CA4 / #0474BC)
+        5. Web Worker — браузер НЕ будет виснуть даже на очень больших таблицах
         
-        1. СОХРАНИ ЭТОТ ФАЙЛ КАК: index.html
-        
-        2. РЯДОМ С ФАЙЛОМ (или в папке data/) ДОЛЖНЫ ЛЕЖАТЬ РОВНО ДВА ФАЙЛА:
-           • table1.xlsx
-           • table2.xlsx
-        
-        3. КАК ЗАПУСТИТЬ (ОБЯЗАТЕЛЬНО через сервер!):
-           • VS Code + Live Server (рекомендуется)
-           • python -m http.server 8000   →  http://localhost:8000
-           • npx serve
-           НЕ ОТКРЫВАЙ ПРОСТО index.html в браузере (file://) — fetch не сработает.
-        
-        4. КОНФИГУРАЦИЯ (изменить за 10 секунд):
-           Внизу в <script> найди массив tablesConfig и меняй:
-           - path (путь к файлу)
-           - displayName (название в табах)
-        
-        5. ФИШКИ:
-           • Полное сохранение форматирования (цвета, границы, merge, шрифты, выравнивание)
-           • Web Worker + SheetJS (не фризит даже 100к+ строк)
-           • Живой глобальный поиск
-           • Сортировка по клику на заголовки
-           • Sticky header + идеальный скролл
-           • Скачать оригинал • Загрузить любой .xlsx
-           • Тёмный god-mode дизайн + Tailwind
-        
-        Сделано с 🔥 как топ-1 эксперт по frontend и browser Excel.
-        Наслаждайся. Можешь дальше дорабатывать — код чистый и прокомментирован.
+        Наслаждайтесь фирменным авиапросмотрщиком таблиц КрасАвиа ✈️
     -->
     
     <div class="max-w-screen-2xl mx-auto">
-        <!-- HEADER -->
-        <div class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-8 py-5 sticky top-0 z-50 shadow-xl">
-            <div class="flex items-center gap-x-8">
-                <!-- Логотип -->
+        <!-- HEADER — фирменный стиль КрасАвиа -->
+        <div class="krasavia-header flex items-center justify-between border-b border-[#045CA4] px-8 py-5 sticky top-0 z-50 shadow-2xl">
+            <div class="flex items-center gap-x-6">
+                <!-- Логотип КрасАвиа -->
                 <div class="flex items-center gap-x-3">
-                    <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-black font-bold text-2xl rotate-12">📊</div>
-                    <h1 class="header-font text-3xl tracking-[-1px]">GodMod Excel</h1>
-                    <span class="text-xs font-mono bg-emerald-500 text-black px-2.5 py-px rounded-3xl font-semibold">v1.0 • ULTRA</span>
+                    <div class="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#045CA4] text-3xl shadow-inner">✈️</div>
+                    <h1 class="header-font text-4xl tracking-[-2px] text-white">КРАСАВИА</h1>
+                    <span class="text-xs font-mono bg-white/20 text-white px-3 py-1 rounded-3xl font-semibold mt-1">ТАБЛИЦЫ</span>
                 </div>
                 
                 <!-- Табы -->
-                <div id="tabs" class="flex bg-zinc-950 rounded-3xl p-1 shadow-inner border border-zinc-800"></div>
+                <div id="tabs" class="flex bg-white/10 backdrop-blur-md rounded-3xl p-1 border border-white/20"></div>
             </div>
             
-            <div class="flex items-center gap-x-4">
-                <div onclick="refreshCurrentTable()" 
-                     class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 h-10 rounded-2xl cursor-pointer font-medium text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.058 11H1M12 3v2m0 16v2m9-9H15m-6 0a8 8 0 01-7.714-6.314" />
+            <div class="flex items-center gap-x-5">
+                <button onclick="refreshCurrentTable()" 
+                        class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 text-white px-6 h-11 rounded-3xl cursor-pointer font-medium text-sm uppercase tracking-widest">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.058 11H1M12 3v2m0 16v2m9-9H15" />
                     </svg>
                     ОБНОВИТЬ
-                </div>
+                </button>
                 
-                <div onclick="triggerFileUpload()" 
-                     class="flex items-center gap-x-2 bg-white text-black hover:bg-emerald-400 px-5 h-10 rounded-2xl cursor-pointer font-semibold text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button onclick="triggerFileUpload()" 
+                        class="flex items-center gap-x-2 bg-white text-[#045CA4] hover:bg-amber-300 px-6 h-11 rounded-3xl cursor-pointer font-semibold text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    ЗАГРУЗИТЬ .XLSX
-                </div>
+                    ЗАГРУЗИТЬ XLSX
+                </button>
                 
                 <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleManualUpload(event)">
                 
-                <div class="text-xs font-mono text-emerald-400 bg-zinc-950 border border-emerald-400/30 px-3 py-1 rounded-2xl flex items-center">
-                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse mr-1"></div>
-                    ONLINE • 2 ТАБЛИЦЫ
+                <div class="flex items-center bg-white/10 text-white text-xs font-mono px-4 h-9 rounded-3xl">
+                    <div class="w-2 h-2 bg-[#04B3EC] rounded-full animate-pulse mr-2"></div>
+                    КРАСАВИА LIVE
                 </div>
             </div>
         </div>
         
         <!-- INFO BAR -->
-        <div id="info-bar" class="px-8 py-4 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between text-sm font-medium">
+        <div id="info-bar" class="px-8 py-4 bg-[#012A4A] border-b border-[#045CA4] flex items-center justify-between text-sm font-medium">
             <div class="flex items-center gap-x-8">
                 <div id="current-table-name" class="flex items-center gap-x-2">
-                    <span class="text-emerald-400">●</span>
-                    <span id="table-display-name" class="font-semibold"></span>
+                    <span class="text-[#04B3EC] text-xl">✈️</span>
+                    <span id="table-display-name" class="font-semibold text-white"></span>
                 </div>
-                
-                <div class="flex items-center gap-x-3 text-zinc-400">
+                <div class="flex items-center gap-x-3 text-white/70">
                     <span id="file-name" class="font-mono"></span>
-                    <span class="text-zinc-600">•</span>
+                    <span class="text-[#045CA4]">•</span>
                     <span id="dimensions" class="font-mono"></span>
                 </div>
             </div>
             
-            <div class="flex items-center gap-x-6 text-xs uppercase tracking-widest">
-                <div onclick="downloadCurrent()" class="flex items-center hover:text-emerald-400 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4" />
-                    </svg>
-                    СКАЧАТЬ XLSX
-                </div>
-                <div class="h-3 w-px bg-zinc-700"></div>
-                <div id="search-hint" class="text-zinc-400">ЖИВОЙ ПОИСК ПО ВСЕЙ ТАБЛИЦЕ ↓</div>
+            <div onclick="downloadCurrent()" class="flex items-center gap-x-2 text-white/80 hover:text-white cursor-pointer text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4" />
+                </svg>
+                СКАЧАТЬ ОРИГИНАЛ
             </div>
         </div>
         
-        <!-- SEARCH + TABLE CONTAINER -->
         <div class="p-8">
-            <!-- Search -->
-            <div class="relative mb-6">
+            <!-- Поиск -->
+            <div class="relative mb-8">
                 <input 
                     id="search-input"
                     type="text"
-                    placeholder="🔎 Поиск по всей таблице... (живой фильтр)"
-                    onkeyup="if(event.keyCode===13) performSearch(); else debounceSearch()"
-                    class="w-full bg-white text-zinc-950 placeholder:text-zinc-400 font-medium text-lg px-7 py-6 rounded-3xl shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-400/30 pl-14">
-                <div class="absolute left-7 top-1/2 -translate-y-1/2 text-2xl">🔎</div>
-                <div onclick="clearSearch()" 
-                     class="absolute right-7 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-950 cursor-pointer text-xl leading-none">✕</div>
+                    placeholder="🔎 Поиск по всей таблице..."
+                    onkeyup="debounceSearch()"
+                    class="w-full bg-white text-[#011B2E] placeholder:text-gray-500 font-medium text-lg px-8 py-6 rounded-3xl shadow-xl focus:outline-none focus:ring-4 focus:ring-[#04B3EC]/30 pl-16">
+                <div class="absolute left-8 top-1/2 -translate-y-1/2 text-3xl">🔎</div>
+                <div onclick="clearSearch()" class="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#011B2E] cursor-pointer text-2xl">✕</div>
             </div>
             
             <!-- Loading -->
-            <div id="loading-screen" class="hidden flex flex-col items-center justify-center py-20">
+            <div id="loading-screen" class="hidden flex flex-col items-center justify-center py-24">
                 <div class="relative">
-                    <div class="w-16 h-16 border-4 border-zinc-700 border-t-emerald-400 rounded-full spinner"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-emerald-400 text-2xl">📊</div>
+                    <div class="w-20 h-20 border-4 border-white/30 border-t-[#04B3EC] rounded-full spinner"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-4xl">✈️</div>
                 </div>
-                <p id="loading-text" class="mt-6 text-emerald-300 text-lg font-medium">Парсим огромную таблицу в Web Worker...</p>
-                <p class="text-zinc-500 text-sm mt-2">Не фризим браузер даже на 100 000 строк</p>
+                <p id="loading-text" class="mt-8 text-[#04B3EC] text-xl font-medium">Парсим таблицу в Web Worker...</p>
+                <p class="text-white/60 mt-2">КрасАвиа не любит, когда браузер виснет</p>
             </div>
             
-            <!-- Error -->
-            <div id="error-screen" class="hidden bg-red-950/80 border border-red-400 text-white rounded-3xl p-8 flex flex-col items-center">
-                <div class="text-6xl mb-4">⚠️</div>
-                <h3 id="error-title" class="text-2xl font-semibold mb-2"></h3>
-                <p id="error-message" class="text-red-200 text-center max-w-md"></p>
-                <button onclick="retryCurrentTable()" 
-                        class="mt-8 px-8 py-3 bg-white text-red-900 rounded-2xl font-bold flex items-center">
-                    ПОВТОРИТЬ ЗАГРУЗКУ
-                </button>
+            <!-- Таблица -->
+            <div id="table-wrapper" class="table-wrapper bg-white rounded-3xl shadow-2xl overflow-auto max-h-[calc(100vh-340px)] border border-white/20 hidden">
+                <div id="table-container" class="p-2"></div>
             </div>
             
-            <!-- Table Wrapper -->
-            <div id="table-wrapper" class="table-wrapper bg-white rounded-3xl shadow-2xl overflow-auto max-h-[calc(100vh-300px)] border border-zinc-200">
-                <div id="table-container" class="p-1"></div>
-            </div>
-            
-            <div id="no-table" class="hidden text-center py-16 text-zinc-400">
-                <div class="text-7xl mb-4 opacity-30">📂</div>
-                <p class="text-xl">Выберите таблицу в верхней панели</p>
+            <div id="no-table" class="hidden text-center py-24 text-white/40">
+                <div class="text-8xl mb-6 opacity-30">✈️</div>
+                <p class="text-2xl">Выберите таблицу выше</p>
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * ====================== КОНФИГУРАЦИЯ (ИЗМЕНИ ЗА 10 СЕКУНД) ======================
-         * Здесь всё, что нужно поменять под свои файлы.
-         */
+        // ====================== КОНФИГ КРАСАВИА ======================
         const tablesConfig = [
             {
                 id: "1",
@@ -273,144 +223,83 @@
                 displayName: "26.05.26 - Загрузка Межрегионалка",
                 filename: "26.05.26 - Загрузка Межрегионалка.xlsx"
             }
-        ]
-        
-        // Глобальное хранилище загруженных таблиц
-        let loadedTables = {}
-        let currentTableId = null
-        let currentArrayBuffer = null
-        let currentFileName = null
-        let debounceTimer = null
-        
-        /**
-         * Инициализация Tailwind + тёмной темы
-         */
-        function initTailwind() {
-            return {
-                config(userConfig = {}) {
-                    return {
-                        configUser: userConfig,
-                        theme: {
-                            extend: {},
-                        },
-                        darkMode: 'class',
-                    }
-                },
-                theme: {
-                    extend: {},
-                },
-            }
-        }
-        
-        /**
-         * Создание табов
-         */
+        ];
+
+        let loadedTables = {};
+        let currentTableId = null;
+        let currentArrayBuffer = null;
+        let currentFileName = null;
+        let debounceTimer = null;
+
         function createTabs() {
-            const container = document.getElementById('tabs')
-            container.innerHTML = ''
-            
+            const container = document.getElementById('tabs');
+            container.innerHTML = '';
             tablesConfig.forEach(cfg => {
-                const tab = document.createElement('button')
-                tab.className = `px-8 py-3 text-base font-semibold rounded-3xl flex items-center gap-x-2 ${currentTableId === cfg.id ? 'tab-active' : 'hover:bg-zinc-900'}`
-                tab.innerHTML = `
-                    <span>${cfg.displayName}</span>
-                    ${currentTableId === cfg.id ? `<span class="text-xs bg-black/20 text-black px-3 rounded-2xl py-px">активна</span>` : ''}
-                `
-                tab.onclick = () => switchToTable(cfg.id)
-                container.appendChild(tab)
-            })
+                const tab = document.createElement('button');
+                tab.className = `px-9 py-3.5 text-base font-semibold rounded-3xl ${currentTableId === cfg.id ? 'tab-active' : 'hover:bg-white/10 text-white'}`;
+                tab.innerHTML = `<span>${cfg.displayName}</span>`;
+                tab.onclick = () => switchToTable(cfg.id);
+                container.appendChild(tab);
+            });
         }
-        
-        /**
-         * Показать спиннер загрузки
-         */
-        function showLoading(text = 'Парсинг в Web Worker...') {
-            document.getElementById('loading-screen').classList.remove('hidden')
-            document.getElementById('table-wrapper').classList.add('hidden')
-            document.getElementById('error-screen').classList.add('hidden')
-            document.getElementById('no-table').classList.add('hidden')
-            document.getElementById('loading-text').innerHTML = text
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading-screen').classList.add('hidden')
-            document.getElementById('table-wrapper').classList.remove('hidden')
-        }
-        
-        /**
-         * Показать ошибку
-         */
-        function showError(title, message) {
-            hideLoading()
-            const err = document.getElementById('error-screen')
-            err.classList.remove('hidden')
-            document.getElementById('table-wrapper').classList.add('hidden')
-            document.getElementById('error-title').textContent = title
-            document.getElementById('error-message').innerHTML = message + '<br><br><span class="text-xs opacity-75">Проверьте, что файл лежит рядом с index.html и сервер запущен.</span>'
-        }
-        
-        /**
-         * Основная функция парсинга (в основном потоке — максимально быстро и стабильно)
-         * Для супер-огромных таблиц можно легко вынести в Worker, но здесь оставлено просто и надёжно.
-         */
-        async function parseExcel(arrayBuffer) {
+
+        function parseWithWorker(arrayBuffer) {
             return new Promise((resolve, reject) => {
-                try {
-                    const wb = XLSX.read(arrayBuffer, { type: 'array' })
-                    const sheetName = wb.SheetNames[0]
-                    const ws = wb.Sheets[sheetName]
-                    
-                    // Полное сохранение форматирования через sheet_to_html
-                    const html = XLSX.utils.sheet_to_html(ws, {
-                        header: true,
-                        footer: false,
-                        // Всё остальное берётся из самого Excel
-                    })
-                    
-                    // Размеры таблицы
-                    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1')
-                    const rows = range.e.r + 1
-                    const cols = range.e.c + 1
-                    
-                    resolve({
-                        html: html,
-                        rows: rows,
-                        cols: cols,
-                        sheetName: sheetName
-                    })
-                } catch (e) {
-                    reject(e)
-                }
-            })
+                const workerCode = `
+                    self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+                    self.onmessage = function(e) {
+                        try {
+                            const wb = XLSX.read(e.data, { type: 'array' });
+                            const sheetName = wb.SheetNames[0];
+                            const ws = wb.Sheets[sheetName];
+                            const html = XLSX.utils.sheet_to_html(ws, { header: true });
+                            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+                            self.postMessage({
+                                html: html,
+                                rows: range.e.r + 1,
+                                cols: range.e.c + 1,
+                                success: true
+                            });
+                        } catch (err) {
+                            self.postMessage({ success: false, error: err.message });
+                        }
+                    };
+                `;
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const worker = new Worker(URL.createObjectURL(blob));
+                
+                worker.onmessage = (e) => {
+                    worker.terminate();
+                    if (e.data.success) resolve(e.data);
+                    else reject(new Error(e.data.error));
+                };
+                
+                worker.postMessage(arrayBuffer);
+            });
         }
-        
-        /**
-         * Загрузка таблицы
-         */
+
         async function loadTable(cfg) {
             if (loadedTables[cfg.id]) {
-                // Уже загружена — просто рендерим
-                currentTableId = cfg.id
-                currentArrayBuffer = loadedTables[cfg.id].arrayBuffer
-                currentFileName = loadedTables[cfg.id].filename
-                renderCurrentTable()
-                createTabs()
-                return
+                currentTableId = cfg.id;
+                currentArrayBuffer = loadedTables[cfg.id].arrayBuffer;
+                currentFileName = loadedTables[cfg.id].filename;
+                renderCurrentTable();
+                createTabs();
+                return;
             }
-            
-            showLoading(`Загружаем <span class="font-mono">${cfg.filename}</span>…`)
-            
+
+            const loading = document.getElementById('loading-screen');
+            const wrapper = document.getElementById('table-wrapper');
+            loading.classList.remove('hidden');
+            wrapper.classList.add('hidden');
+
             try {
-                const response = await fetch(cfg.path)
+                const response = await fetch(cfg.path);
+                if (!response.ok) throw new Error('Файл не найден');
+                const arrayBuffer = await response.arrayBuffer();
                 
-                if (!response.ok) {
-                    throw new Error(`Файл не найден (HTTP ${response.status})`)
-                }
-                
-                const arrayBuffer = await response.arrayBuffer()
-                const parsed = await parseExcel(arrayBuffer)
-                
-                // Сохраняем в память
+                const parsed = await parseWithWorker(arrayBuffer);
+
                 loadedTables[cfg.id] = {
                     html: parsed.html,
                     rows: parsed.rows,
@@ -418,232 +307,130 @@
                     arrayBuffer: arrayBuffer,
                     displayName: cfg.displayName,
                     filename: cfg.filename
-                }
-                
-                currentTableId = cfg.id
-                currentArrayBuffer = arrayBuffer
-                currentFileName = cfg.filename
-                
-                hideLoading()
-                renderCurrentTable()
-                createTabs()
-                
+                };
+
+                currentTableId = cfg.id;
+                currentArrayBuffer = arrayBuffer;
+                currentFileName = cfg.filename;
+
+                loading.classList.add('hidden');
+                wrapper.classList.remove('hidden');
+                renderCurrentTable();
+                createTabs();
             } catch (err) {
-                console.error(err)
-                let msg = err.message
-                if (err.message.includes('404') || err.message.includes('не найден')) {
-                    msg = `Файл <b>${cfg.path}</b> не найден.<br>Положите его рядом с index.html или в папку data/`
-                }
-                showError(`Ошибка загрузки ${cfg.displayName}`, msg)
+                console.error(err);
+                loading.classList.add('hidden');
+                alert('Ошибка загрузки таблицы КрасАвиа: ' + err.message);
             }
         }
-        
-        /**
-         * Рендер текущей таблицы
-         */
+
         function renderCurrentTable() {
-            const data = loadedTables[currentTableId]
-            if (!data) return
-            
-            const container = document.getElementById('table-container')
-            container.innerHTML = data.html
-            
-            // Применяем дополнительные стили к таблице
-            const table = container.querySelector('table')
+            const data = loadedTables[currentTableId];
+            if (!data) return;
+            const container = document.getElementById('table-container');
+            container.innerHTML = data.html;
+
+            const table = container.querySelector('table');
             if (table) {
-                table.style.width = '100%'
-                table.style.borderCollapse = 'collapse'
-                
-                // Делаем заголовки кликабельными для сортировки
-                const thead = table.querySelector('thead')
-                if (thead) {
-                    const headers = thead.querySelectorAll('th')
-                    headers.forEach((th, index) => {
-                        th.setAttribute('data-col-index', index)
-                        th.style.position = 'sticky'
-                        th.style.top = '0'
-                        th.style.zIndex = '20'
-                        th.style.cursor = 'pointer'
-                        th.addEventListener('click', () => sortTableByColumn(index))
-                    })
-                }
+                table.style.borderCollapse = 'collapse';
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((th, i) => {
+                    th.setAttribute('data-col-index', i);
+                    th.addEventListener('click', () => sortTableByColumn(i));
+                });
             }
-            
-            // Обновляем инфо-панель
-            updateInfoBar(data)
-            
-            // Восстанавливаем поиск, если он был
-            if (document.getElementById('search-input').value) {
-                performSearch()
-            }
+            updateInfoBar(data);
         }
-        
-        /**
-         * Обновление инфо-панели
-         */
+
         function updateInfoBar(data) {
-            document.getElementById('table-display-name').textContent = data.displayName
-            document.getElementById('file-name').innerHTML = `<span class="font-mono text-emerald-400">${data.filename}</span>`
-            document.getElementById('dimensions').innerHTML = `<span class="text-zinc-400">${data.rows.toLocaleString('ru-RU')} строк × ${data.cols} столбцов</span>`
+            document.getElementById('table-display-name').textContent = data.displayName;
+            document.getElementById('file-name').innerHTML = `<span class="font-mono">${data.filename}</span>`;
+            document.getElementById('dimensions').innerHTML = `<span class="text-white/70">${data.rows.toLocaleString('ru-RU')} строк × ${data.cols} столбцов</span>`;
         }
-        
-        /**
-         * Переключение между таблицами
-         */
+
         function switchToTable(id) {
-            const cfg = tablesConfig.find(t => t.id === id)
-            if (cfg) loadTable(cfg)
+            const cfg = tablesConfig.find(t => t.id === id);
+            if (cfg) loadTable(cfg);
         }
-        
-        /**
-         * Сортировка по колонке (простая, но очень быстрая)
-         */
+
         function sortTableByColumn(colIndex) {
-            const container = document.getElementById('table-container')
-            const table = container.querySelector('table')
-            if (!table) return
-            
-            const tbody = table.querySelector('tbody')
-            if (!tbody) return
-            
-            const rows = Array.from(tbody.querySelectorAll('tr'))
-            const th = table.querySelector(`thead th[data-col-index="${colIndex}"]`)
-            
-            // Определяем направление
-            let direction = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc'
-            th.setAttribute('data-sort-dir', direction)
-            
-            // Сбрасываем остальные заголовки
-            table.querySelectorAll('thead th').forEach(header => {
-                if (header !== th) header.removeAttribute('data-sort-dir')
-            })
-            
-            rows.sort((rowA, rowB) => {
-                const cellA = rowA.cells[colIndex]
-                const cellB = rowB.cells[colIndex]
-                
-                if (!cellA || !cellB) return 0
-                
-                let valA = cellA.textContent.trim()
-                let valB = cellB.textContent.trim()
-                
-                // Попытка числовой сортировки
-                const numA = parseFloat(valA.replace(/\s/g, '').replace(',', '.'))
-                const numB = parseFloat(valB.replace(/\s/g, '').replace(',', '.'))
-                
-                if (!isNaN(numA) && !isNaN(numB)) {
-                    return direction === 'asc' ? numA - numB : numB - numA
-                }
-                
-                return direction === 'asc' 
-                    ? valA.localeCompare(valB, 'ru') 
-                    : valB.localeCompare(valA, 'ru')
-            })
-            
-            // Перестраиваем tbody
-            rows.forEach(row => tbody.appendChild(row))
+            const container = document.getElementById('table-container');
+            const table = container.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const th = table.querySelector(`thead th[data-col-index="${colIndex}"]`);
+            let dir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+            th.setAttribute('data-sort-dir', dir);
+
+            rows.sort((a, b) => {
+                const cellA = a.cells[colIndex]?.textContent.trim() || '';
+                const cellB = b.cells[colIndex]?.textContent.trim() || '';
+                const numA = parseFloat(cellA.replace(/\s/g, '').replace(',', '.'));
+                const numB = parseFloat(cellB.replace(/\s/g, '').replace(',', '.'));
+                if (!isNaN(numA) && !isNaN(numB)) return dir === 'asc' ? numA - numB : numB - numA;
+                return dir === 'asc' ? cellA.localeCompare(cellB, 'ru') : cellB.localeCompare(cellA, 'ru');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
         }
-        
-        /**
-         * Глобальный живой поиск
-         */
+
         function debounceSearch() {
-            clearTimeout(debounceTimer)
-            debounceTimer = setTimeout(performSearch, 180)
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(performSearch, 220);
         }
-        
+
         function performSearch() {
-            const term = document.getElementById('search-input').value.toLowerCase().trim()
-            const container = document.getElementById('table-container')
-            const table = container.querySelector('table')
-            if (!table) return
-            
-            const tbody = table.querySelector('tbody')
-            if (!tbody) return
-            
-            const rows = tbody.querySelectorAll('tr')
-            
-            let visibleCount = 0
-            
-            rows.forEach(row => {
-                const rowText = row.textContent.toLowerCase()
-                if (!term || rowText.includes(term)) {
-                    row.style.display = ''
-                    visibleCount++
-                } else {
-                    row.style.display = 'none'
-                }
-            })
-            
-            // Если ничего не найдено — показываем подсказку
-            if (visibleCount === 0 && term) {
-                const tfoot = table.querySelector('tfoot') || document.createElement('tfoot')
-                tfoot.innerHTML = `<tr><td colspan="999" class="text-center py-12 text-zinc-400 text-base">Ничего не найдено по запросу «${term}»</td></tr>`
-                if (!table.querySelector('tfoot')) table.appendChild(tfoot)
-            } else if (table.querySelector('tfoot')) {
-                table.querySelector('tfoot').remove()
-            }
+            const term = document.getElementById('search-input').value.toLowerCase().trim();
+            const container = document.getElementById('table-container');
+            const table = container.querySelector('table');
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            Array.from(tbody.querySelectorAll('tr')).forEach(row => {
+                row.style.display = (!term || row.textContent.toLowerCase().includes(term)) ? '' : 'none';
+            });
         }
-        
+
         function clearSearch() {
-            document.getElementById('search-input').value = ''
-            performSearch()
+            document.getElementById('search-input').value = '';
+            performSearch();
         }
-        
-        /**
-         * Обновить текущую таблицу (рефреш)
-         */
+
         async function refreshCurrentTable() {
-            if (!currentTableId) return
-            const cfg = tablesConfig.find(t => t.id === currentTableId)
+            if (!currentTableId) return;
+            const cfg = tablesConfig.find(t => t.id === currentTableId);
             if (cfg) {
-                // Удаляем из кэша, чтобы перезагрузить с сервера
-                delete loadedTables[currentTableId]
-                await loadTable(cfg)
+                delete loadedTables[currentTableId];
+                await loadTable(cfg);
             }
         }
-        
-        /**
-         * Скачать оригинальный файл
-         */
+
         function downloadCurrent() {
-            if (!currentArrayBuffer || !currentFileName) {
-                alert('Нет файла для скачивания')
-                return
-            }
-            
-            const blob = new Blob([currentArrayBuffer], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            })
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = currentFileName
-            link.click()
-            URL.revokeObjectURL(link.href)
+            if (!currentArrayBuffer || !currentFileName) return;
+            const blob = new Blob([currentArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = currentFileName;
+            link.click();
         }
-        
-        /**
-         * Триггер ручной загрузки
-         */
+
         function triggerFileUpload() {
-            document.getElementById('fileInput').click()
+            document.getElementById('fileInput').click();
         }
-        
-        /**
-         * Обработка загруженного пользователем файла
-         */
+
         async function handleManualUpload(e) {
-            const file = e.target.files[0]
-            if (!file) return
-            
-            showLoading(`Парсим загруженный файл <span class="font-mono">${file.name}</span>…`)
-            
+            const file = e.target.files[0];
+            if (!file) return;
+            const loading = document.getElementById('loading-screen');
+            loading.classList.remove('hidden');
             try {
-                const arrayBuffer = await file.arrayBuffer()
-                const parsed = await parseExcel(arrayBuffer)
-                
-                // Сохраняем как "custom"
-                const customId = 'custom-' + Date.now()
+                const arrayBuffer = await file.arrayBuffer();
+                const parsed = await parseWithWorker(arrayBuffer);
+                const customId = 'custom-' + Date.now();
                 loadedTables[customId] = {
                     html: parsed.html,
                     rows: parsed.rows,
@@ -651,60 +438,30 @@
                     arrayBuffer: arrayBuffer,
                     displayName: '📤 Загруженный файл',
                     filename: file.name
-                }
-                
-                currentTableId = customId
-                currentArrayBuffer = arrayBuffer
-                currentFileName = file.name
-                
-                hideLoading()
-                renderCurrentTable()
-                createTabs() // обновим табы, хотя custom не в конфиге
-                
-                // Показываем уведомление
-                const notif = document.createElement('div')
-                notif.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#00ff9d; color:#000; padding:16px 24px; border-radius:9999px; font-weight:700; box-shadow:0 25px 50px -12px rgb(0 255 157);'
-                notif.textContent = '✅ Файл успешно загружен и отображается'
-                document.body.appendChild(notif)
-                setTimeout(() => notif.remove(), 2800)
-                
+                };
+                currentTableId = customId;
+                currentArrayBuffer = arrayBuffer;
+                currentFileName = file.name;
+                loading.classList.add('hidden');
+                document.getElementById('table-wrapper').classList.remove('hidden');
+                renderCurrentTable();
+                createTabs();
             } catch (err) {
-                showError('Ошибка чтения файла', 'Файл повреждён или не поддерживается SheetJS')
+                alert('Ошибка чтения файла');
+                loading.classList.add('hidden');
             }
-            
-            // Очищаем input
-            e.target.value = ''
+            e.target.value = '';
         }
-        
-        /**
-         * Повторить загрузку после ошибки
-         */
-        function retryCurrentTable() {
-            if (!currentTableId) return
-            const cfg = tablesConfig.find(t => t.id === currentTableId)
-            if (cfg) loadTable(cfg)
-        }
-        
-        /**
-         * Главная инициализация
-         */
-        async function initializeGodModViewer() {
-            // Tailwind
-            initTailwind()
-            
-            // Создаём табы
-            createTabs()
-            
-            // Автозагрузка первой таблицы
+
+        async function initializeKrasAviaViewer() {
+            createTabs();
             if (tablesConfig.length > 0) {
-                await loadTable(tablesConfig[0])
+                await loadTable(tablesConfig[0]);
             }
-            
-            console.log('%c🚀 GodMod Excel Viewer запущен. Полное форматирование + производительность на максимуме.', 'color:#00ff9d; font-family:monospace; font-size:13px')
+            console.log('%c✈️ КРАСАВИА Excel Viewer (Web Worker) запущен', 'color:#04B3EC; font-size:15px; font-weight:600');
         }
-        
-        // Запуск при полной загрузке страницы
-        window.onload = initializeGodModViewer
+
+        window.onload = initializeKrasAviaViewer;
     </script>
 </body>
 </html>
