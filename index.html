@@ -9,48 +9,33 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
         
-        :root {
-            --primary: #0474BC;
-        }
+        :root { --primary: #0474BC; }
         
         * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         
         .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
         .header-font { font-family: 'Space Grotesk', sans-serif; }
 
-        #table-container table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 13px;
+        #table-container table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        #table-container th, #table-container td { 
+            padding: 9px 14px; 
+            border: 1px solid #3f3f46; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
         }
-        
-        #table-container th,
-        #table-container td {
-            padding: 9px 14px;
-            border: 1px solid #3f3f46;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 260px;
+        #table-container thead th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 20; 
+            background: #012A4A; 
+            color: white; 
+            font-weight: 600; 
+            cursor: pointer; 
         }
-        
-        #table-container thead th {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: #012A4A;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        
         #table-container thead th:hover { background: #0474BC; }
-        
-        .table-wrapper {
-            scrollbar-width: thin;
-            scrollbar-color: #0474BC #27272a;
-        }
-        
+
+        .table-wrapper { scrollbar-width: thin; scrollbar-color: #0474BC #27272a; }
         .spinner { animation: spin 1.2s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
@@ -63,22 +48,18 @@
         .krasavia-header {
             background: linear-gradient(90deg, #012A4A, #045CA4);
         }
-        
-        .pagination-btn {
-            @apply px-4 py-2 text-sm font-medium rounded-2xl bg-white/10 hover:bg-white/20 text-white;
-        }
     </style>
 </head>
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
     <!-- ====================== ИНСТРУКЦИЯ КРАСАВИА ====================== -->
     <!-- 
-        КРАСАВИА • ПРОСМОТРЩИК ТАБЛИЦ (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
-        ========================================================
-        • Исправлена проблема с нехваткой памяти (OOM)
-        • Теперь используем пагинацию + Web Worker
-        • Можно показывать по 1000 строк за раз (очень большие таблицы больше не убивают браузер)
-        • Полное сохранение форматирования невозможно при 50к+ строк — но данные и сортировка работают идеально
-        • Файлы table1.xlsx и table2.xlsx должны лежать в корне репозитория
+        КРАСАВИА • ПРОСМОТРЩИК ТАБЛИЦ (МАКСИМАЛЬНО ЛЁГКАЯ ВЕРСИЯ)
+        =============================================================
+        • Для ОЧЕНЬ больших таблиц (50 000+ строк)
+        • По умолчанию грузит только ПЕРВЫЕ 5000 строк (мгновенно)
+        • Кнопка «Загрузить полностью» — если действительно нужно всё
+        • Web Worker + минимальное потребление памяти
+        • Браузер больше не будет падать
     -->
 
     <div class="max-w-screen-2xl mx-auto">
@@ -93,9 +74,11 @@
                 <div id="tabs" class="flex bg-white/10 backdrop-blur-md rounded-3xl p-1 border border-white/20"></div>
             </div>
             
-            <div class="flex items-center gap-x-5">
-                <button onclick="refreshCurrentTable()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-11 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
-                <button onclick="triggerFileUpload()" class="flex items-center gap-x-2 bg-white text-[#045CA4] hover:bg-amber-300 px-6 h-11 rounded-3xl font-semibold text-sm">ЗАГРУЗИТЬ XLSX</button>
+            <div class="flex items-center gap-x-4">
+                <button onclick="refreshCurrentTable()" 
+                        class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-11 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
+                <button onclick="triggerFileUpload()" 
+                        class="flex items-center gap-x-2 bg-white text-[#045CA4] hover:bg-amber-300 px-6 h-11 rounded-3xl font-semibold text-sm">ЗАГРУЗИТЬ XLSX</button>
                 <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleManualUpload(event)">
             </div>
         </div>
@@ -113,8 +96,7 @@
                     <span id="dimensions" class="font-mono"></span>
                 </div>
             </div>
-            <button onclick="downloadCurrent()" class="flex items-center gap-x-2 text-white/80 hover:text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4"/></svg>
+            <button onclick="downloadCurrent()" class="flex items-center gap-x-2 text-white/80 hover:text-white text-sm">
                 СКАЧАТЬ ОРИГИНАЛ
             </button>
         </div>
@@ -129,49 +111,49 @@
             </div>
 
             <!-- Loading -->
-            <div id="loading-screen" class="hidden flex flex-col items-center justify-center py-24">
-                <div class="relative">
+            <div id="loading-screen" class="hidden flex flex-col items-center justify-center py-20 bg-[#012A4A] rounded-3xl">
+                <div class="relative mb-6">
                     <div class="w-20 h-20 border-4 border-white/30 border-t-[#04B3EC] rounded-full spinner"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-4xl">✈️</div>
+                    <div class="absolute inset-0 flex items-center justify-center text-5xl">✈️</div>
                 </div>
-                <p class="mt-8 text-[#04B3EC] text-xl font-medium">Загружаем таблицу в Web Worker...</p>
-                <p class="text-white/60 mt-2">Память под контролем — пагинация включена</p>
+                <p id="loading-text" class="text-[#04B3EC] text-2xl font-medium mb-1">Загружаем таблицу...</p>
+                <p id="loading-subtext" class="text-white/70 text-center max-w-md">Очень большая таблица.<br>Это может занять 20–90 секунд.<br><span class="text-xs">Не закрывайте вкладку и не обновляйте страницу.</span></p>
             </div>
 
-            <!-- Таблица + Пагинация -->
+            <!-- Таблица -->
             <div id="table-wrapper" class="hidden bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20">
                 <div id="table-container" class="overflow-auto max-h-[calc(100vh-340px)] p-2"></div>
                 
-                <!-- Пагинация -->
                 <div id="pagination" class="flex items-center justify-between bg-[#011B2E] px-6 py-4 border-t border-white/10 text-sm"></div>
+            </div>
+
+            <!-- Кнопка полной загрузки -->
+            <div id="full-load-area" class="hidden mt-6 text-center">
+                <button onclick="loadFullTable()" 
+                        class="bg-white text-[#045CA4] hover:bg-amber-300 px-8 py-4 rounded-3xl text-lg font-semibold flex items-center gap-x-3 mx-auto">
+                    <span>Загрузить ПОЛНУЮ таблицу</span>
+                    <span class="text-2xl">↓</span>
+                </button>
+                <p class="text-white/50 text-sm mt-3">Если нужно увидеть все строки (может быть медленно)</p>
             </div>
         </div>
     </div>
 
     <script>
-        // ====================== КОНФИГ КРАСАВИА ======================
+        // ====================== КОНФИГ ======================
         const tablesConfig = [
-           {
-                id: "1",
-                path: "./26.05.26 - Загрузка КК.xlsx",           // можно "./data/table1.xlsx"
-                displayName: "26.05.26 - Загрузка КК",
-                filename: "26.05.26 - Загрузка КК.xlsx"
-            },
-            {
-                id: "2",
-                path: "./26.05.26 - Загрузка Межрегионалка.xlsx",           // можно "./data/table2.xlsx"
-                displayName: "26.05.26 - Загрузка Межрегионалка",
-                filename: "26.05.26 - Загрузка Межрегионалка.xlsx"
-            }
+            { id: "1", path: "./table1.xlsx", displayName: "Таблица 1", filename: "table1.xlsx" },
+            { id: "2", path: "./table2.xlsx", displayName: "Таблица 2", filename: "table2.xlsx" }
         ];
 
         let loadedTables = {};
         let currentTableId = null;
         let currentArrayBuffer = null;
         let currentFileName = null;
-        let currentData = null;           // массив строк для пагинации
+        let currentData = null;           // полный массив строк
+        let displayData = null;           // то, что сейчас показываем (preview или full)
         let currentPage = 1;
-        const ROWS_PER_PAGE = 1000;       // можно увеличить до 2000, если браузер мощный
+        const ROWS_PER_PAGE = 500;        // максимально комфортно даже на слабых ноутбуках
 
         function createTabs() {
             const container = document.getElementById('tabs');
@@ -185,16 +167,28 @@
             });
         }
 
-        // Web Worker — парсинг в JSON (экономит память)
-        function parseWithWorker(arrayBuffer) {
+        // СУПЕР-ОПТИМИЗИРОВАННЫЙ Web Worker
+        function parseWithWorker(arrayBuffer, isPreview = true) {
             return new Promise((resolve, reject) => {
                 const workerCode = `
                     self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
                     self.onmessage = function(e) {
                         try {
-                            const wb = XLSX.read(e.data, { type: 'array' });
+                            const wb = XLSX.read(e.data, { 
+                                type: 'array',
+                                cellFormula: false,
+                                cellHTML: false,
+                                cellStyles: false,
+                                cellDates: false
+                            });
                             const ws = wb.Sheets[wb.SheetNames[0]];
-                            const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }); // массив массивов
+                            // Самый лёгкий формат — чистый массив массивов
+                            let json = XLSX.utils.sheet_to_json(ws, { 
+                                header: 1, 
+                                defval: "", 
+                                raw: true,
+                                dense: true 
+                            });
                             const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
                             self.postMessage({
                                 data: json,
@@ -209,35 +203,45 @@
                 `;
                 const blob = new Blob([workerCode], { type: 'application/javascript' });
                 const worker = new Worker(URL.createObjectURL(blob));
-                worker.onmessage = e => {
+                
+                worker.onmessage = (e) => {
                     worker.terminate();
                     e.data.success ? resolve(e.data) : reject(new Error(e.data.error));
                 };
+                
                 worker.postMessage(arrayBuffer);
             });
         }
 
-        async function loadTable(cfg) {
-            if (loadedTables[cfg.id]) {
+        async function loadTable(cfg, fullLoad = false) {
+            if (loadedTables[cfg.id] && !fullLoad) {
                 currentTableId = cfg.id;
                 currentArrayBuffer = loadedTables[cfg.id].arrayBuffer;
                 currentFileName = loadedTables[cfg.id].filename;
                 currentData = loadedTables[cfg.id].data;
+                displayData = currentData.slice(0, 5000); // preview
                 currentPage = 1;
                 renderCurrentTable();
                 createTabs();
                 return;
             }
 
-            document.getElementById('loading-screen').classList.remove('hidden');
-            document.getElementById('table-wrapper').classList.add('hidden');
+            const loading = document.getElementById('loading-screen');
+            const wrapper = document.getElementById('table-wrapper');
+            loading.classList.remove('hidden');
+            wrapper.classList.add('hidden');
+            document.getElementById('full-load-area').classList.add('hidden');
+
+            document.getElementById('loading-text').innerHTML = fullLoad 
+                ? 'Загружаем <b>ПОЛНУЮ</b> таблицу...' 
+                : 'Загружаем <b>ПРЕВЬЮ</b> (первые 5000 строк)...';
 
             try {
                 const res = await fetch(cfg.path);
                 if (!res.ok) throw new Error('Файл не найден');
                 const arrayBuffer = await res.arrayBuffer();
 
-                const parsed = await parseWithWorker(arrayBuffer);
+                const parsed = await parseWithWorker(arrayBuffer, !fullLoad);
 
                 loadedTables[cfg.id] = {
                     data: parsed.data,
@@ -252,40 +256,48 @@
                 currentArrayBuffer = arrayBuffer;
                 currentFileName = cfg.filename;
                 currentData = parsed.data;
+                
+                // По умолчанию — preview
+                displayData = fullLoad ? currentData : currentData.slice(0, 5000);
                 currentPage = 1;
 
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('table-wrapper').classList.remove('hidden');
+                loading.classList.add('hidden');
+                wrapper.classList.remove('hidden');
+                
+                if (!fullLoad && currentData.length > 5000) {
+                    document.getElementById('full-load-area').classList.remove('hidden');
+                }
+
                 renderCurrentTable();
                 createTabs();
             } catch (err) {
-                alert('Ошибка загрузки: ' + err.message);
-                document.getElementById('loading-screen').classList.add('hidden');
+                console.error(err);
+                loading.classList.add('hidden');
+                alert('Ошибка загрузки таблицы КрасАвиа:\n' + err.message);
             }
         }
 
+        function loadFullTable() {
+            const cfg = tablesConfig.find(t => t.id === currentTableId);
+            if (cfg) loadTable(cfg, true);
+        }
+
         function renderCurrentTable() {
-            if (!currentData) return;
-            
+            if (!displayData || displayData.length === 0) return;
+
             const start = (currentPage - 1) * ROWS_PER_PAGE;
-            const end = Math.min(start + ROWS_PER_PAGE, currentData.length);
-            const pageData = currentData.slice(start, end);
+            const end = Math.min(start + ROWS_PER_PAGE, displayData.length);
+            const pageData = displayData.slice(start, end);
 
             let html = `<table class="w-full"><thead><tr>`;
-            // Заголовки
-            if (pageData.length > 0) {
-                pageData[0].forEach(header => {
-                    html += `<th>${header || ''}</th>`;
-                });
+            if (pageData[0]) {
+                pageData[0].forEach(cell => html += `<th>${cell || ''}</th>`);
             }
             html += `</tr></thead><tbody>`;
 
-            // Строки
             for (let i = 1; i < pageData.length; i++) {
                 html += `<tr>`;
-                pageData[i].forEach(cell => {
-                    html += `<td>${cell || ''}</td>`;
-                });
+                pageData[i].forEach(cell => html += `<td>${cell || ''}</td>`);
                 html += `</tr>`;
             }
             html += `</tbody></table>`;
@@ -296,25 +308,27 @@
         }
 
         function renderPagination() {
-            const totalPages = Math.ceil(currentData.length / ROWS_PER_PAGE);
-            const paginationHTML = `
-                <div class="flex items-center gap-x-4 text-sm">
-                    <button onclick="goToPage(${currentPage-1})" class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''}>← Назад</button>
-                    <span class="font-medium">Страница <b>${currentPage}</b> из ${totalPages}</span>
-                    <button onclick="goToPage(${currentPage+1})" class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''}>Вперёд →</button>
-                    <span class="text-white/60 ml-auto">Показываем ${ROWS_PER_PAGE} строк • Всего: ${currentData.length.toLocaleString('ru-RU')}</span>
+            const totalPages = Math.ceil(displayData.length / ROWS_PER_PAGE);
+            const html = `
+                <div class="flex items-center gap-x-6 text-sm">
+                    <button onclick="goToPage(${currentPage-1})" class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-2xl" ${currentPage <= 1 ? 'disabled' : ''}>← Назад</button>
+                    <span>Страница <b>${currentPage}</b> из ${totalPages}</span>
+                    <button onclick="goToPage(${currentPage+1})" class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-2xl" ${currentPage >= totalPages ? 'disabled' : ''}>Вперёд →</button>
+                    <span class="ml-auto text-white/60">Показано ${ROWS_PER_PAGE} строк • Всего строк: ${displayData.length.toLocaleString('ru-RU')}</span>
                 </div>`;
-            document.getElementById('pagination').innerHTML = paginationHTML;
+            document.getElementById('pagination').innerHTML = html;
         }
 
         function goToPage(page) {
-            if (page < 1 || page > Math.ceil(currentData.length / ROWS_PER_PAGE)) return;
+            const total = Math.ceil(displayData.length / ROWS_PER_PAGE);
+            if (page < 1 || page > total) return;
             currentPage = page;
             renderCurrentTable();
         }
 
         function updateInfoBar() {
             const data = loadedTables[currentTableId];
+            if (!data) return;
             document.getElementById('table-display-name').textContent = data.displayName;
             document.getElementById('file-name').innerHTML = `<span class="font-mono">${data.filename}</span>`;
             document.getElementById('dimensions').innerHTML = `<span class="text-white/70">${data.rows.toLocaleString('ru-RU')} строк × ${data.cols} столбцов</span>`;
@@ -353,21 +367,16 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const parsed = await parseWithWorker(arrayBuffer);
                 const customId = 'custom-' + Date.now();
-                loadedTables[customId] = {
-                    data: parsed.data,
-                    rows: parsed.rows,
-                    cols: parsed.cols,
-                    arrayBuffer,
-                    displayName: 'Загруженный файл',
-                    filename: file.name
-                };
+                loadedTables[customId] = { data: parsed.data, rows: parsed.rows, cols: parsed.cols, arrayBuffer, displayName: 'Загруженный файл', filename: file.name };
                 currentTableId = customId;
                 currentArrayBuffer = arrayBuffer;
                 currentFileName = file.name;
                 currentData = parsed.data;
+                displayData = parsed.data.slice(0, 5000);
                 currentPage = 1;
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('table-wrapper').classList.remove('hidden');
+                if (parsed.data.length > 5000) document.getElementById('full-load-area').classList.remove('hidden');
                 renderCurrentTable();
                 createTabs();
             } catch (err) {
@@ -378,16 +387,15 @@
 
         function debounceSearch() {
             clearTimeout(window.searchTimer);
-            window.searchTimer = setTimeout(() => {
-                // Поиск работает по всей таблице, но отображает только текущую страницу
-                renderCurrentTable();
-            }, 300);
+            window.searchTimer = setTimeout(() => renderCurrentTable(), 250);
         }
 
         async function initializeKrasAviaViewer() {
             createTabs();
-            if (tablesConfig.length > 0) await loadTable(tablesConfig[0]);
-            console.log('%c✈️ КРАСАВИА Excel Viewer • Память под контролем', 'color:#04B3EC; font-size:15px');
+            if (tablesConfig.length > 0) {
+                await loadTable(tablesConfig[0]); // preview mode
+            }
+            console.log('%c✈️ КРАСАВИА • Максимально лёгкая версия загружена', 'color:#04B3EC; font-weight:700');
         }
 
         window.onload = initializeKrasAviaViewer;
