@@ -31,15 +31,13 @@
 
         <!-- ОСНОВНАЯ ОБЛАСТЬ -->
         <div class="flex-1 flex flex-col">
-            
-            <!-- КОМПАКТНЫЙ ВЕРХНИЙ ХЕДЕР -->
             <div class="krasavia-header px-8 py-3 flex items-center justify-between shadow-sm">
                 <div id="selected-flight-title" class="text-white text-xl font-semibold"></div>
                 <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/20 hover:bg-white/30 px-6 h-9 rounded-3xl text-sm font-medium text-white">⟳ ОБНОВИТЬ</button>
             </div>
 
-            <!-- ТАБЛИЦА СРАЗУ ПОД ХЕДЕРОМ -->
-            <div class="flex-1 p-4 md:p-6 overflow-auto bg-gray-50">
+            <!-- ТАБЛИЦА С МИНИМАЛЬНЫМИ ОТСТУПАМИ -->
+            <div class="flex-1 p-2 overflow-auto bg-gray-50">
                 <div id="table-container" class="flight-card hidden"></div>
             </div>
         </div>
