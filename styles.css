@@ -41,4 +41,5 @@ tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; }
 @media (max-width: 768px) {
     table { font-size: 13px; min-width: 100%; }
     th, td { padding: 10px 8px; }
+    .flight-card { padding: 8px !important; }
 }
