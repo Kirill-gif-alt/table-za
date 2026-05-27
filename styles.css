@@ -17,10 +17,10 @@ td { color: #012A4A; font-weight: 500; }
 
 tr:hover { background: #f8fafc; }
 tr.extra-flight { background: #f3e8ff !important; }
-tr.closed-flight { background: #e5e7eb !important; }
+tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; }
 
 .extra-badge { color: #8B00FF; font-weight: 700; }
-.closed-text { color: #ef4444 !important; font-weight: 700; }
+.closed-text, .flew-text { color: #ef4444 !important; font-weight: 700; }
 
 .occupancy-high { color: #22C55E; font-weight: 700; }
 .occupancy-med  { color: #F59E0B; font-weight: 700; }
