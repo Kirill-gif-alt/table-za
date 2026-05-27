@@ -8,128 +8,60 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
-        
         :root { --primary: #0474BC; }
-        
         * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
-        
         .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
         .header-font { font-family: 'Space Grotesk', sans-serif; }
-        
-        .krasavia-header {
-            background: linear-gradient(90deg, #012A4A, #045CA4);
-        }
-        
-        .flight-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px -10px rgb(4 116 188);
-        }
-        
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 14px;
-        }
-        
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        th {
-            background: #012A4A;
-            color: white;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        
-        tr:hover {
-            background: #f1f5f9;
-        }
-        
+        .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
+        .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background: #f8fafc; }
         .occupancy-high { color: #10b981; font-weight: 700; }
         .occupancy-med  { color: #f59e0b; font-weight: 700; }
         .occupancy-low  { color: #ef4444; font-weight: 700; }
-        
-        .flight-item {
-            transition: all 0.2s;
-        }
-        .flight-item:hover {
-            background: #f1f5f9;
-        }
-        .flight-item.active {
-            background: #0474BC;
-            color: white;
-        }
+        .flight-item { transition: all 0.2s; }
+        .flight-item:hover { background: #f1f5f9; }
+        .flight-item.active { background: #0474BC; color: white; }
     </style>
 </head>
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
 
-    <!-- ====================== ИНСТРУКЦИЯ ====================== -->
-    <!-- 
-        КРАСАВИА • ПРОСМОТРЩИК CSV (ФИНАЛЬНАЯ ВЕРСИЯ)
-        ================================================
-        • Выбор рейса из боковой панели
-        • Показывается только выбранный рейс
-        • Современный дизайн в стиле КрасАвиа
-        • Мгновенная загрузка CSV
-    -->
-
     <div class="max-w-screen-2xl mx-auto flex h-screen">
-        <!-- Сайдбар с выбором рейсов -->
+        <!-- Боковая панель -->
         <div class="w-72 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col">
-            <div class="p-6 border-b">
-                <div class="flex items-center gap-x-3">
-                    <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
-                    <h1 class="header-font text-3xl">КРАСАВИА</h1>
-                </div>
-                <p class="text-xs font-mono text-gray-500 mt-1">Авиа-таблицы</p>
+            <div class="p-6 border-b flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
+                <h1 class="header-font text-3xl">КРАСАВИА</h1>
             </div>
             
-            <div class="p-4 text-xs uppercase tracking-widest text-gray-400 font-medium px-6">Выберите рейс</div>
+            <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             
-            <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
+            <div id="flight-list" class="flex-1 overflow-auto px-3"></div>
             
-            <div class="p-6 border-t text-xs text-gray-400">
-                <button onclick="triggerFileUpload()" 
-                        class="w-full flex items-center justify-center gap-x-2 bg-[#0474BC] text-white py-3 rounded-3xl hover:bg-[#045CA4]">
-                    <span>Загрузить другой CSV</span>
+            <div class="p-6 border-t">
+                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] text-white py-3 rounded-3xl font-medium flex items-center justify-center gap-x-2 hover:bg-[#045CA4]">
+                    Загрузить другой CSV
                 </button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
             </div>
         </div>
 
-        <!-- Основная область -->
+        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
-            <!-- Top bar -->
             <div class="krasavia-header px-8 py-5 flex items-center justify-between">
-                <div class="flex items-center gap-x-4">
-                    <span id="selected-flight-title" class="text-2xl font-semibold"></span>
-                </div>
-                
-                <div class="flex items-center gap-x-6">
-                    <button onclick="refreshData()" 
-                            class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">
-                        ОБНОВИТЬ
-                    </button>
-                    <div id="info-text" class="text-white/80 text-sm font-medium"></div>
+                <div id="selected-flight-title" class="text-3xl font-semibold"></div>
+                <div class="flex items-center gap-x-8">
+                    <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
+                    <div id="info-text" class="text-white/80 text-sm"></div>
                 </div>
             </div>
 
-            <!-- Контент -->
             <div class="flex-1 p-8 overflow-auto">
                 <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
-                </div>
-
-                <div id="no-selection" class="hidden flex flex-col items-center justify-center h-full text-center">
-                    <div class="text-7xl mb-6">✈️</div>
-                    <p class="text-2xl text-white/70">Выберите рейс в боковой панели</p>
+                    <p class="mt-6 text-[#04B3EC]">Загрузка...</p>
                 </div>
 
                 <div id="table-container" class="flight-card p-6 hidden"></div>
@@ -147,15 +79,17 @@
         let groupedData = {};
         let currentFlight = null;
 
-        function normalize(str) {
-            return String(str || '').trim().toLowerCase();
+        function normalizeFlight(flightStr) {
+            let f = String(flightStr || '').trim().toUpperCase();
+            f = f.replace(/[^KV0-9-]/g, ''); // оставляем только KV, цифры и тире
+            return f.substring(0, 6); // ровно 6 символов
         }
 
         function findValue(row, keys) {
             for (let key in row) {
-                const nKey = normalize(key);
+                const nKey = String(key).trim().toLowerCase();
                 for (let k of keys) {
-                    if (nKey.includes(normalize(k))) {
+                    if (nKey.includes(k.toLowerCase())) {
                         return row[key];
                     }
                 }
@@ -166,23 +100,21 @@
         async function loadCSV(filePath) {
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('table-container').classList.add('hidden');
-            document.getElementById('no-selection').classList.add('hidden');
 
             try {
                 const res = await fetch(filePath);
-                if (!res.ok) throw new Error('CSV не найден');
                 const csvText = await res.text();
 
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: function(results) {
+                    complete: (results) => {
                         allData = results.data;
                         processData();
                     }
                 });
             } catch (err) {
-                alert('Ошибка загрузки CSV: ' + err.message);
+                alert('Ошибка загрузки CSV');
                 document.getElementById('loading-screen').classList.add('hidden');
             }
         }
@@ -191,18 +123,21 @@
             groupedData = {};
 
             allData.forEach(row => {
-                const flight = findValue(row, ['Рейс', 'рейс', 'Flight', 'KV-']) || 'Неизвестный рейс';
-                if (!groupedData[flight]) groupedData[flight] = [];
-                groupedData[flight].push(row);
+                let rawFlight = findValue(row, ['Рейс', 'рейс', 'Flight', 'KV']);
+                let cleanFlight = normalizeFlight(rawFlight);
+                if (!cleanFlight) cleanFlight = 'Неизвестный';
+
+                if (!groupedData[cleanFlight]) groupedData[cleanFlight] = [];
+                groupedData[cleanFlight].push(row);
             });
 
             renderFlightList();
             document.getElementById('loading-screen').classList.add('hidden');
-            
-            // Автоматически выбираем первый рейс
+
+            // Автовыбор первого рейса
             if (Object.keys(groupedData).length > 0) {
-                const firstFlight = Object.keys(groupedData).sort()[0];
-                selectFlight(firstFlight);
+                const first = Object.keys(groupedData).sort()[0];
+                selectFlight(first);
             }
         }
 
@@ -213,15 +148,13 @@
             Object.keys(groupedData).sort().forEach(flight => {
                 const count = groupedData[flight].length;
                 const div = document.createElement('div');
-                div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === flight ? 'active' : ''}`;
+                div.className = `flight-item flex justify-between items-center px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === flight ? 'active' : ''}`;
                 div.innerHTML = `
                     <div class="flex items-center gap-x-3">
                         <span class="text-xl">✈️</span>
-                        <div>
-                            <div class="font-semibold">Рейс ${flight}</div>
-                            <div class="text-xs text-gray-500">${count} записей</div>
-                        </div>
+                        <span class="font-semibold">Рейс ${flight}</span>
                     </div>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
                 `;
                 div.onclick = () => selectFlight(flight);
                 container.appendChild(div);
@@ -231,15 +164,14 @@
         function selectFlight(flight) {
             currentFlight = flight;
             renderFlightList();
-            
+
             const rows = groupedData[flight] || [];
-            
-            document.getElementById('no-selection').classList.add('hidden');
-            document.getElementById('table-container').classList.remove('hidden');
-            document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="text-3xl">${flight}</span>`;
-            
+
+            document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${flight}</span>`;
+            document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
+
             let html = `
-            <table>
+            <table class="w-full">
                 <thead>
                     <tr>
                         <th>Дата</th>
@@ -264,7 +196,7 @@
 
                 html += `
                     <tr>
-                        <td class="font-medium">${date}</td>
+                        <td>${date}</td>
                         <td>${segment}</td>
                         <td>${route}</td>
                         <td class="text-right font-semibold">${totalAU}</td>
@@ -275,22 +207,15 @@
 
             html += `</tbody></table>`;
             document.getElementById('table-container').innerHTML = html;
-            
-            document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
+            document.getElementById('table-container').classList.remove('hidden');
         }
 
-        function refreshData() {
-            loadCSV(csvConfig.path);
-        }
-
-        function triggerFileUpload() {
-            document.getElementById('fileInput').click();
-        }
+        function refreshData() { loadCSV(csvConfig.path); }
+        function triggerFileUpload() { document.getElementById('fileInput').click(); }
 
         function handleManualUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
