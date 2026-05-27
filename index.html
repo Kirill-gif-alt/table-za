@@ -59,7 +59,7 @@
             <div class="flex-1 p-8 overflow-auto">
                 <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
+                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка...</p>
                 </div>
 
                 <div id="table-container" class="flight-card p-6 hidden"></div>
@@ -68,6 +68,19 @@
     </div>
 
     <script>
+        // Инициализация Tailwind (убирает предупреждение)
+        function initTailwind() {
+            return {
+                config(userConfig = {}) {
+                    return {
+                        configUser: userConfig,
+                        theme: { extend: {} },
+                    }
+                },
+                theme: { extend: {} }
+            }
+        }
+
         const csvConfig = {
             path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",
             displayName: "RepRaidAvailSeg"
@@ -89,9 +102,10 @@
 
             try {
                 const res = await fetch(filePath);
+                if (!res.ok) throw new Error('Файл не найден');
                 let text = await res.text();
 
-                // Пропускаем первые 3 строки (метаданные)
+                // Пропускаем первые 3 строки
                 let lines = text.split('\n');
                 lines = lines.slice(3);
                 const cleanCSV = lines.join('\n');
@@ -115,7 +129,7 @@
 
             allData.forEach(row => {
                 const values = Object.values(row);
-                const rawFlight = values[0] || '';                    // колонка A — Рейс
+                const rawFlight = values[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 
                 if (!groupedData[flight]) groupedData[flight] = [];
@@ -158,67 +172,4 @@
             const rows = groupedData[flight] || [];
 
             document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${flight}</span>`;
-            document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
-
-            let html = `
-            <table class="w-full">
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Сегмент</th>
-                        <th>Маршрут</th>
-                        <th class="text-right">Total AU</th>
-                        <th class="text-right">Free SegBkd</th>
-                        <th class="text-right">Загрузка</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-            rows.forEach(row => {
-                const values = Object.values(row);
-                const date    = values[1] || '-';     // B — Дата
-                const segment = values[2] || '-';     // C — Сегмент
-                const route   = values[3] || '-';     // D — Маршрут
-                const totalAU = parseInt(values[5] || 0);  // F — Total AU
-                const freeSeg = parseInt(values[6] || 0);  // G — Free SegBkd
-                const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
-
-                const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
-
-                html += `
-                    <tr>
-                        <td>${date}</td>
-                        <td>${segment}</td>
-                        <td>${route}</td>
-                        <td class="text-right font-semibold">${totalAU || '-'}</td>
-                        <td class="text-right font-semibold">${freeSeg || '-'}</td>
-                        <td class="text-right font-bold ${occClass}">${occupancy}%</td>
-                    </tr>`;
-            });
-
-            html += `</tbody></table>`;
-            document.getElementById('table-container').innerHTML = html;
-            document.getElementById('table-container').classList.remove('hidden');
-        }
-
-        function refreshData() { loadCSV(csvConfig.path); }
-        function triggerFileUpload() { document.getElementById('fileInput').click(); }
-
-        function handleManualUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: (results) => {
-                    allData = results.data;
-                    csvConfig.displayName = file.name;
-                    processData();
-                }
-            });
-        }
-
-        window.onload = () => loadCSV(csvConfig.path);
-    </script>
-</body>
-</html>
+            document.getElementById('info-text').innerHTML = `Записей: <span class="
