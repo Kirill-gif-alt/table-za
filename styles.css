@@ -10,7 +10,7 @@
 .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
 .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
 
-table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; position: relative; }
 th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
 th { 
     background: #012A4A; 
@@ -18,7 +18,7 @@ th {
     font-weight: 600; 
     position: sticky; 
     top: 0; 
-    z-index: 10; 
+    z-index: 20; 
 }
 td { color: #012A4A; font-weight: 500; }
 
@@ -46,7 +46,7 @@ tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; }
 }
 
 @media (max-width: 768px) {
-    table { font-size: 13px; min-width: 100%; }
+    table { font-size: 13px; }
     th, td { padding: 10px 8px; }
     .flight-card { padding: 8px !important; }
 }
