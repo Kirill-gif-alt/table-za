@@ -11,13 +11,14 @@
 
     <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
 
-        <!-- Мобильный верх -->
-        <div class="md:hidden bg-white text-[#012A4A] border-b px-4 py-3 flex items-center gap-3 overflow-x-auto">
-            <div class="flex-shrink-0 text-xl">✈️</div>
-            <div id="mobile-flight-list" class="flex gap-2"></div>
+        <!-- Вкладки -->
+        <div class="bg-white border-b px-6 flex text-sm md:text-base">
+            <button onclick="showTab(0)" id="tab0" class="tab-button active px-8 py-4 font-medium">📊 Основная таблица</button>
+            <button onclick="showTab(1)" id="tab1" class="tab-button px-8 py-4 font-medium">🚫 Отчет по закрытым рейсам</button>
         </div>
 
-        <div class="flex flex-1 overflow-hidden">
+        <!-- Вкладка 1: Основная таблица -->
+        <div id="tab-content-0" class="flex flex-1 overflow-hidden">
 
             <!-- Боковая панель (ПК) -->
             <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
@@ -39,12 +40,12 @@
                         ➕ Добавить закрытые рейсы
                     </button>
                     <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-3xl font-medium">
-                        💾 Сохранить данные
+                        💾 Сохранить все данные
                     </button>
                 </div>
             </div>
 
-            <!-- Основная часть -->
+            <!-- Основная таблица -->
             <div class="flex-1 flex flex-col">
                 <div class="krasavia-header px-6 py-5 flex items-center justify-between">
                     <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
@@ -60,11 +61,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- Вкладка 2: Отчет по закрытым рейсам -->
+        <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
+            <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center">
+                <input id="closedSearch" type="text" placeholder="Поиск по рейсу" class="border border-gray-300 rounded-3xl px-5 py-2 w-72 focus:outline-none">
+                <input id="closedDateFrom" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
+                <span class="text-gray-500">—</span>
+                <input id="closedDateTo" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
+                <button onclick="showClosedReport()" class="bg-gray-700 text-white px-8 py-2 rounded-3xl font-medium">Показать закрытые рейсы</button>
+                <button onclick="resetClosedFilters()" class="text-gray-500">Сбросить</button>
+            </div>
+            <div class="flex-1 p-6 overflow-auto">
+                <div id="closed-report-container" class="flight-card p-6"></div>
+            </div>
+        </div>
     </div>
 
     <input type="file" id="availabilityInput" accept=".csv" multiple class="hidden" onchange="handleAvailabilityUpload(event)">
     <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
-    <input type="file" id="closedInput" accept=".csv" class="hidden" onchange="handleClosedUpload(event)">
+    <input type="file" id="closedInput" accept=".csv" multiple class="hidden" onchange="handleClosedUpload(event)">
 
     <script src="script.js"></script>
 </body>
