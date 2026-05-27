@@ -18,11 +18,11 @@
         th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
         td { color: #012A4A; font-weight: 500; }
         tr:hover { background: #f8fafc; }
+        tr.extra-flight { background: #f3e8ff !important; }
+        .extra-badge { color: #8B00FF; font-weight: 700; }
         .occupancy-high { color: #22C55E; font-weight: 700; }
         .occupancy-med  { color: #F59E0B; font-weight: 700; }
         .occupancy-low  { color: #EF4444; font-weight: 700; }
-        tr.extra-flight { background: #f3e8ff !important; } /* фиолетовый фон */
-        .extra-badge { color: #8B00FF; font-weight: 700; }
         .flight-item { transition: all 0.2s; }
         .flight-item:hover { background: #f1f5f9; }
         .flight-item.active { background: #0474BC; color: white; }
@@ -40,30 +40,21 @@
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
 
-            <div class="p-6 border-t space-y-6">
-                <div class="path-box p-5 rounded-3xl">
-                    <p class="text-xs text-gray-500 mb-1">Доступность — 2 последних файла</p>
-                    <p class="text-[#0474BC] font-medium text-sm">Y:\Отделы\11 КС\ООРП\Загрузка\База оп</p>
-                    <button onclick="triggerAvailabilityUpload()" class="mt-4 w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium">
-                        ➕ Выбрать папку с доступностью
-                    </button>
-                </div>
-
-                <div class="path-box p-5 rounded-3xl">
-                    <p class="text-xs text-gray-500 mb-1">Продажи</p>
-                    <p class="text-[#8B00FF] font-medium text-sm">Y:\Отделы\11 КС\ООРП\Загрузка\csv</p>
-                    <button onclick="triggerSalesUpload()" class="mt-4 w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium">
-                        ➕ Выбрать файл продаж
-                    </button>
-                </div>
-
-                <input type="file" id="availabilityInput" accept=".csv" multiple webkitdirectory directory class="hidden" onchange="handleAvailabilityUpload(event)">
-                <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
+            <div class="p-6 border-t space-y-3">
+                <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">
+                    ➕ Добавить доступность
+                </button>
+                <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3 rounded-3xl font-medium">
+                    ➕ Добавить продажи
+                </button>
+                <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-3xl font-medium">
+                    💾 Сохранить данные (для всех устройств)
+                </button>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col">
-            <div class="krasavia-header px-6 md:px-8 py-5 flex items-center justify-between">
+            <div class="krasavia-header px-6 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
                 <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
             </div>
@@ -73,7 +64,7 @@
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
                     <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
                 </div>
-                <div id="table-container" class="flight-card p-6 hidden"></div>
+                <div id="table-container" class="flight-card p-4 md:p-6 hidden"></div>
             </div>
         </div>
     </div>
@@ -84,13 +75,38 @@
         let groupedData = {};
         let currentFlight = null;
 
-        function normalizeDate(d) {
-            d = String(d || '').trim();
-            if (d.includes('.')) return d;
-            if (d.length === 8) return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
-            return d;
+        const DATA_FILE = "./krasavia-data.json";
+
+        // Автозагрузка сохранённых данных
+        async function loadSavedData() {
+            try {
+                const res = await fetch(DATA_FILE + '?t=' + Date.now());
+                if (res.ok) {
+                    const saved = await res.json();
+                    allData = saved.allData || [];
+                    salesMap = saved.salesMap || {};
+                    console.log('%c✅ Данные загружены из krasavia-data.json', 'color:lime');
+                    processData();
+                }
+            } catch(e) {}
         }
 
+        function saveData() {
+            const data = {
+                allData: allData,
+                salesMap: salesMap,
+                timestamp: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'krasavia-data.json';
+            a.click();
+            alert('✅ Файл krasavia-data.json скачан!\n\nПросто замени им старый файл в репозитории.');
+        }
+
+        // === Остальной код (processData, renderFlightList, selectFlight и т.д.) ===
         function cleanFlight(str) {
             let f = String(str || '').trim().toUpperCase();
             f = f.replace(/[^KV0-9-]/g, '');
@@ -123,8 +139,6 @@
                 if (row.length < 7) return;
                 let flight = cleanFlight(row[0]);
                 let baseFlight = getBaseFlight(flight);
-                let route = (row[3] || '').replace(/KCY/g, 'KJA');
-                row[3] = route;
                 if (!groupedData[baseFlight]) groupedData[baseFlight] = [];
                 groupedData[baseFlight].push(row);
             });
@@ -138,13 +152,13 @@
             container.innerHTML = '';
             Object.keys(groupedData).sort().forEach(baseFlight => {
                 const count = groupedData[baseFlight].length;
+                const isExtra = isExtraFlight(baseFlight);
                 const div = document.createElement('div');
                 div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === baseFlight ? 'active' : ''}`;
-                const route = groupedData[baseFlight][0][3] || baseFlight;
                 div.innerHTML = `
                     <div class="flex items-center gap-x-3">
                         <span class="text-xl">✈️</span>
-                        <span class="font-semibold">${route}</span>
+                        <span class="font-semibold">Рейс ${baseFlight} ${isExtra ? '<span class="extra-badge">(ДОП)</span>' : ''}</span>
                     </div>
                     <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
                 `;
@@ -179,10 +193,9 @@
                 const key = `${date}|${cleanFlight(row[0])}`;
                 const sales = salesMap[key] || {today:0, yesterday:0};
                 const isExtra = isExtraFlight(cleanFlight(row[0]));
-                const rowClass = isExtra ? 'extra-flight' : '';
                 const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
 
-                html += `<tr class="${rowClass}">
+                html += `<tr class="${isExtra ? 'extra-flight' : ''}">
                     <td>${date} ${isExtra ? '<span class="extra-badge ml-2">(ДОП)</span>' : ''}</td>
                     <td class="text-right font-semibold">${totalAU}</td>
                     <td class="text-right font-semibold">${freeSeg}</td>
@@ -197,17 +210,15 @@
             document.getElementById('table-container').classList.remove('hidden');
         }
 
+        // Загрузка файлов (как раньше)
         function triggerAvailabilityUpload() {
-            alert("✅ ОТКРОЙТЕ ПАПКУ:\n\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\База оп\n\nВыберите всю папку (не отдельные файлы)");
+            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\База оп");
             document.getElementById('availabilityInput').click();
         }
 
         function handleAvailabilityUpload(e) {
-            const files = Array.from(e.target.files).filter(f => f.name.endsWith('.csv'));
-            if (files.length === 0) return alert("В папке нет CSV-файлов");
-
-            // Сортируем по имени (самые новые обычно имеют большую дату в названии)
-            files.sort((a, b) => b.name.localeCompare(a.name));
+            const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().endsWith('.csv'));
+            files.sort((a, b) => b.lastModified - a.lastModified);
             const latestTwo = files.slice(0, 2);
 
             let loaded = 0;
@@ -220,17 +231,14 @@
                     const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
                     allData = allData.concat(parsed);
                     loaded++;
-                    if (loaded === latestTwo.length) {
-                        processData();
-                        alert(`✅ Загружено 2 самых новых файла из папки`);
-                    }
+                    if (loaded === latestTwo.length) processData();
                 };
                 reader.readAsText(file, 'windows-1251');
             });
         }
 
         function triggerSalesUpload() {
-            alert("✅ ОТКРОЙТЕ ПАПКУ:\n\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\csv\n\nВыберите файл Tickets_SALE_Last14Days.csv");
+            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\csv");
             document.getElementById('salesInput').click();
         }
 
@@ -253,7 +261,7 @@
                     if (date === todayStr) salesMap[key].today++;
                     else if (rows[2] && date === normalizeDate(rows[2][0])) salesMap[key].yesterday++;
                 });
-                alert('✅ Продажи загружены!');
+                alert('Продажи загружены!');
                 if (currentFlight) selectFlight(currentFlight);
             };
             reader.readAsText(file, 'windows-1251');
@@ -261,7 +269,9 @@
 
         function refreshData() { location.reload(); }
 
-        window.onload = () => console.log('%cКРАСАВИА — всё готово', 'color:#0474BC;font-weight:bold');
+        window.onload = () => {
+            loadSavedData();
+        };
     </script>
 </body>
 </html>
