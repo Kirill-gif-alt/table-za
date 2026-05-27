@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500&display=swap');
         :root { --primary: #0474BC; }
         * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
         .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
@@ -68,13 +68,13 @@
     </div>
 
     <script>
-        // Инициализация Tailwind (убирает предупреждение)
+        // Инициализация Tailwind
         function initTailwind() {
             return { config(userConfig = {}) { return { configUser: userConfig, theme: { extend: {} } }; }, theme: { extend: {} } };
         }
 
         const csvConfig = {
-            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",
+            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← ОСТАВЛЕН ТВОЙ ОРИГИНАЛЬНЫЙ ФАЙЛ
             displayName: "RepRaidAvailSeg"
         };
 
@@ -105,6 +105,8 @@
                 Papa.parse(cleanCSV, {
                     header: true,
                     skipEmptyLines: true,
+                    delimiter: ";",        // ← КРИТИЧНО ВАЖНО ДЛЯ ТВОЕГО CSV
+                    encoding: "UTF-8",
                     complete: (results) => {
                         allData = results.data;
                         processData();
@@ -120,8 +122,7 @@
             groupedData = {};
 
             allData.forEach(row => {
-                const values = Object.values(row);
-                const rawFlight = values[0] || '';
+                const rawFlight = row['Рейс'] || row['KV'] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 
                 if (!groupedData[flight]) groupedData[flight] = [];
@@ -181,15 +182,15 @@
                 <tbody>`;
 
             rows.forEach(row => {
-                const values = Object.values(row);
-                const date    = values[1] || '-';
-                const segment = values[2] || '-';
-                const route   = values[3] || '-';
-                const totalAU = parseInt(values[5] || 0);
-                const freeSeg = parseInt(values[6] || 0);
+                const date     = row['Дата'] || '-';
+                const segment  = row['Сегмент'] || '-';
+                const route    = row['Маршрут'] || '-';
+                const totalAU  = parseInt(row['Total AU'] || row['TotalAU'] || 0);
+                const freeSeg  = parseInt(row['Free SegBkd'] || row['FreeSegBkd'] || 0);
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
-                const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
+                const occClass = occupancy >= 75 ? 'occupancy-high' : 
+                               (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
 
                 html += `
                     <tr>
@@ -216,6 +217,7 @@
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
+                delimiter: ";",
                 complete: (results) => {
                     allData = results.data;
                     csvConfig.displayName = file.name;
