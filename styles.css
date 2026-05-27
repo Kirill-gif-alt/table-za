@@ -34,12 +34,21 @@ th {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* ВТОРАЯ СТРОКА (СУММЫ) — ТОЖЕ ЗАФИКСИРОВАНА СРАЗУ ПОД ШАПКОЙ */
+.summary-row {
+    background: #012A4A !important;
+    color: white !important;
+    font-weight: 700;
+    position: sticky;
+    top: 48px; /* высота первой шапки */
+    z-index: 25;
+}
+
 td { color: #012A4A; font-weight: 500; }
 
 tr:hover { background: #f8fafc; }
 tr.extra-flight { background: #f3e8ff !important; }
 
-/* СЕРЫЙ ДЛЯ ЗАКРЫТЫХ И УЛЕТЕВШИХ */
 tr.closed-flight, 
 tr.flew-flight { 
     background: #e5e7eb !important; 
@@ -65,14 +74,8 @@ tr.flew-flight {
     color: #012A4A;
 }
 
-/* ИТОГОВАЯ СТРОКА */
-tfoot tr {
-    background: #f1f5f9 !important;
-    font-weight: 700;
-    border-top: 3px solid #012A4A;
-}
-
 @media (max-width: 768px) {
     table { font-size: 13px; min-width: 100%; }
     th, td { padding: 10px 8px; }
+    .summary-row { top: 42px; }
 }
