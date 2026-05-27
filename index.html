@@ -85,18 +85,6 @@
             return f.substring(0, 6);
         }
 
-        function findValue(row, keys) {
-            for (let key in row) {
-                const nKey = String(key).trim().toLowerCase();
-                for (let k of keys) {
-                    if (nKey.includes(k.toLowerCase())) {
-                        return row[key];
-                    }
-                }
-            }
-            return '';
-        }
-
         async function loadCSV(filePath) {
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('table-container').classList.add('hidden');
@@ -106,9 +94,9 @@
                 if (!res.ok) throw new Error('Файл не найден');
                 let text = await res.text();
 
-                // === ПРОПУСКАЕМ ПЕРВЫЕ 3 СТРОКИ (метаданные) ===
+                // Пропускаем первые 3 строки (метаданные)
                 let lines = text.split('\n');
-                lines = lines.slice(3);           // начинаем с 4-й строки
+                lines = lines.slice(3);
                 const cleanCSV = lines.join('\n');
 
                 Papa.parse(cleanCSV, {
@@ -129,8 +117,10 @@
             groupedData = {};
 
             allData.forEach(row => {
-                const rawFlight = findValue(row, ['Рейс', 'рейс', 'Flight', 'KV']);
+                // Берём первую колонку как номер рейса (самое надёжное)
+                const rawFlight = Object.values(row)[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
+                
                 if (!groupedData[flight]) groupedData[flight] = [];
                 groupedData[flight].push(row);
             });
@@ -188,11 +178,11 @@
                 <tbody>`;
 
             rows.forEach(row => {
-                const date = findValue(row, ['Дата', 'date']) || '-';
-                const segment = findValue(row, ['Сегмент', 'segment']) || '-';
-                const route = findValue(row, ['Маршрут', 'route']) || '-';
-                const totalAU = parseInt(findValue(row, ['Total AU', 'TotalAU', 'total au']) || 0);
-                const freeSeg = parseInt(findValue(row, ['Free SegBkd', 'FreeSegBkd', 'free seg']) || 0);
+                const date = Object.values(row)[1] || '-';           // 2-я колонка — Дата
+                const segment = Object.values(row)[2] || '-';        // 3-я — Сегмент
+                const route = Object.values(row)[3] || '-';          // 4-я — Маршрут
+                const totalAU = parseInt(Object.values(row)[4] || 0); // 5-я — Total AU
+                const freeSeg = parseInt(Object.values(row)[5] || 0); // 6-я — Free SegBkd
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
                 const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
