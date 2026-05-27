@@ -9,53 +9,19 @@ const DATA_FILE = "./krasavia-data.json";
 const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
 function cleanFlight(str) {
-    let f = String(str || '').trim().toUpperCase();
-    if (/^\d+$/.test(f)) f = 'KV-' + f;
-    f = f.replace(/[^KV0-9-]/g, '');
+    let f = String(str || '').trim().toUpperCase().replace(/[^0-9]/g, '');
+    if (f) f = 'KV-' + f;
     return f.substring(0, 6);
 }
 
-function isNormalFlight(flight) {
-    let num = parseInt(flight.replace('KV-', '')) || 0;
-    if (num >= 100 && num <= 199) return true;
-    return NORMAL_FLIGHTS.has(num);
-}
-
-function getBaseFlight(flight) {
-    let num = parseInt(flight.replace('KV-', '')) || 0;
-    if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
-    if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
-    if (num === 261) return 'KV-161';
-    if (num === 262) return 'KV-162';
-    if (num === 253) return 'KV-153';
-    if (num === 254) return 'KV-154';
-    if (num === 273) return 'KV-173';
-    if (num === 274) return 'KV-174';
-    if (num === 325) return 'KV-225';
-    if (num === 326) return 'KV-226';
-    if (num >= 300 && num <= 399) return `KV-${num - 200}`;
-    if (num >= 400 && num <= 499) return `KV-${num - 300}`;
-    return flight;
-}
-
-function parseDate(dateStr) {
-    if (!dateStr) return new Date(0);
-    const [day, month, year] = dateStr.split('.').map(Number);
-    return new Date(year, month - 1, day);
-}
-
 function normalizeDate(d) {
-    d = String(d || '').trim();
-    if (!d) return '';
+    d = String(d || '').trim().replace(/[^0-9]/g, '');
+    if (d.length === 8) {
+        return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+    }
     if (d.includes('.')) {
         const parts = d.split('.');
-        if (parts.length === 3) {
-            return `${parts[0].padStart(2,'0')}.${parts[1].padStart(2,'0')}.${parts[2]}`;
-        }
-        return d;
-    }
-    if (d.length === 8 && /^\d{8}$/.test(d)) {
-        return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+        if (parts.length === 3) return `${parts[0].padStart(2,'0')}.${parts[1].padStart(2,'0')}.${parts[2]}`;
     }
     return d;
 }
@@ -68,115 +34,26 @@ function getTodayYesterday() {
     return { today: format(today), yesterday: format(yesterday) };
 }
 
-function isPastDate(dateStr) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const flightDate = parseDate(dateStr);
-    return flightDate < today;
-}
-
-function processData() {
-    groupedData = {};
-    allData.forEach(row => {
-        if (row.length < 7) return;
-        let flight = cleanFlight(row[0]);
-        let base = getBaseFlight(flight);
-        if (!groupedData[base]) groupedData[base] = [];
-        groupedData[base].push(row);
-    });
-
-    renderFlightList();
-    if (Object.keys(groupedData).length > 0) {
-        selectFlight(Object.keys(groupedData).sort()[0]);
-    }
-}
-
-function renderFlightList() {
-    const container = document.getElementById('flight-list');
-    container.innerHTML = '';
-
-    Object.keys(groupedData).sort().forEach(base => {
-        const count = groupedData[base].length;
-        const div = document.createElement('div');
-        div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === base ? 'active' : ''}`;
-        div.innerHTML = `
-            <div class="flex items-center gap-x-3">
-                <span class="text-xl">Airplane</span>
-                <span class="font-semibold">Рейс ${base}</span>
-            </div>
-            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
-        `;
-        div.onclick = () => selectFlight(base);
-        container.appendChild(div);
-    });
-}
-
-function selectFlight(base) {
-    currentFlight = base;
-    renderFlightList();
-
-    let rows = groupedData[base] || [];
-    rows.sort((a, b) => parseDate(a[1]) - parseDate(b[1]));
-
-    document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${base}</span>`;
-
-    let html = `<table class="w-full"><thead><tr>
-        <th>Дата</th>
-        <th class="text-right">ПКЗ</th>
-        <th class="text-right">Загрузка</th>
-        <th class="text-right">Продажи за сегодня</th>
-        <th class="text-right">Продажи за вчера</th>
-        <th class="text-right">ЗПК</th>
-    </tr></thead><tbody>`;
-
-    rows.forEach(row => {
-        const date = row[1] || '-';
-        const totalAU = parseInt(row[5] || 0);
-        const freeSeg = parseInt(row[6] || 0);
-        const originalFlight = cleanFlight(row[0]);
-        const key = `${date}|${originalFlight}`;
-        const sales = salesMap[key] || {today:0, yesterday:0};
-        const isClosed = closedFlights.has(key);
-        const isExtra = originalFlight !== base;
-        const isFlew = isPastDate(date);
-
-        let statusHTML = '';
-        let rowClass = '';
-
-        if (isClosed) {
-            statusHTML = `<span class="closed-text">ЗАКРЫТ</span>`;
-            rowClass = 'closed-flight';
-        } else if (isFlew) {
-            statusHTML = `<span class="flew-text">УЛЕТЕЛ</span>`;
-            rowClass = 'flew-flight';
-        } else {
-            const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
-            const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
-            statusHTML = `<span class="${cls}">${occ}%</span>`;
-            rowClass = isExtra ? 'extra-flight' : '';
+function parseCSVLine(line) {
+    const result = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"' && (i === 0 || line[i-1] !== '\\')) {
+            inQuotes = !inQuotes;
+            continue;
         }
-
-        const flightDisplay = isExtra 
-            ? `${date} <span class="font-medium">${originalFlight}</span> <span class="extra-badge ml-1">(ДОП)</span>` 
-            : date;
-
-        html += `<tr class="${rowClass}">
-            <td>${flightDisplay}</td>
-            <td class="text-right font-semibold">${totalAU}</td>
-            <td class="text-right font-semibold">${freeSeg}</td>
-            <td class="text-right font-semibold">${sales.today}</td>
-            <td class="text-right font-semibold">${sales.yesterday}</td>
-            <td class="text-right font-bold">${statusHTML}</td>
-        </tr>`;
-    });
-
-    html += `</tbody></table>`;
-    document.getElementById('table-container').innerHTML = html;
-    document.getElementById('table-container').classList.remove('hidden');
+        if (c === ',' && !inQuotes) {
+            result.push(field.trim());
+            field = '';
+        } else {
+            field += c;
+        }
+    }
+    result.push(field.trim());
+    return result;
 }
-
-// ====================== ЗАГРУЗКА ПРОДАЖ (ИСПРАВЛЕНО) ======================
-function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 
 function handleSalesUpload(e) {
     const file = e.target.files[0];
@@ -184,16 +61,13 @@ function handleSalesUpload(e) {
 
     const reader = new FileReader();
     reader.onload = ev => {
-        let text = ev.target.result;
-        const separator = text.includes(';') && !text.includes(',') ? ';' : ',';
-        console.log('%c🔥 Разделитель продаж:', 'color:orange;font-weight:bold', separator);
-
+        const text = ev.target.result;
         const lines = text.split('\n').filter(l => l.trim());
-        const rows = lines.slice(1).map(l => l.split(separator).map(f => f.trim()));
+        const rows = lines.slice(1).map(line => parseCSVLine(line));
 
         const dates = getTodayYesterday();
-        console.log('%c📅 Сегодня:', 'color:lime', dates.today);
-        console.log('%c📅 Вчера:', 'color:lime', dates.yesterday);
+        console.log('%c📅 Сегодня:', 'color:lime;font-weight:bold', dates.today);
+        console.log('%c📅 Вчера:', 'color:lime;font-weight:bold', dates.yesterday);
 
         salesMap = {};
         let salesCount = 0;
@@ -223,36 +97,121 @@ function handleSalesUpload(e) {
             }
         });
 
-        console.log(`%c✅ Загружено продаж: ${salesCount}`, 'color:lime;font-size:16px');
-        console.table(Object.fromEntries(Object.entries(salesMap).slice(0,10)));
+        console.log(`%c✅ ЗАГРУЖЕНО ПРОДАЖ: ${salesCount}`, 'color:lime;font-size:18px');
+        console.table(salesMap);
 
-        alert(`✅ Продажи загружены!\nСегодня (${dates.today}): ${Object.values(salesMap).reduce((a,b)=>a+b.today,0)}\nВчера (${dates.yesterday}): ${Object.values(salesMap).reduce((a,b)=>a+b.yesterday,0)}`);
+        alert(`✅ Продажи загружены!\nСегодня: ${Object.values(salesMap).reduce((a,b)=>a+b.today,0)}\nВчера: ${Object.values(salesMap).reduce((a,b)=>a+b.yesterday,0)}`);
 
         if (currentFlight) selectFlight(currentFlight);
-        else if (Object.keys(groupedData).length > 0) selectFlight(Object.keys(groupedData).sort()[0]);
+        else if (Object.keys(groupedData).length) selectFlight(Object.keys(groupedData).sort()[0]);
     };
     reader.readAsText(file, 'windows-1251');
 }
 
-// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
+function getBaseFlight(flight) {
+    let num = parseInt(flight.replace('KV-', '')) || 0;
+    if ([151,351,355,455].includes(num)) return 'KV-155';
+    if ([152,352,356,456].includes(num)) return 'KV-156';
+    if (num === 261) return 'KV-161';
+    if (num === 262) return 'KV-162';
+    if (num === 253) return 'KV-153';
+    if (num === 254) return 'KV-154';
+    if (num === 273) return 'KV-173';
+    if (num === 274) return 'KV-174';
+    if (num === 325) return 'KV-225';
+    if (num === 326) return 'KV-226';
+    if (num >= 300 && num <= 399) return `KV-${num - 200}`;
+    if (num >= 400 && num <= 499) return `KV-${num - 300}`;
+    return flight;
+}
+
+function processData() {
+    groupedData = {};
+    allData.forEach(row => {
+        if (row.length < 7) return;
+        let flight = cleanFlight(row[0]);
+        let base = getBaseFlight(flight);
+        if (!groupedData[base]) groupedData[base] = [];
+        groupedData[base].push(row);
+    });
+    renderFlightList();
+    if (Object.keys(groupedData).length > 0) selectFlight(Object.keys(groupedData).sort()[0]);
+}
+
+function renderFlightList() {
+    const container = document.getElementById('flight-list');
+    container.innerHTML = '';
+    Object.keys(groupedData).sort().forEach(base => {
+        const count = groupedData[base].length;
+        const div = document.createElement('div');
+        div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === base ? 'active' : ''}`;
+        div.innerHTML = `
+            <span class="font-semibold text-lg">Рейс ${base}</span>
+            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
+        `;
+        div.onclick = () => selectFlight(base);
+        container.appendChild(div);
+    });
+}
+
+function selectFlight(base) {
+    currentFlight = base;
+    renderFlightList();
+
+    let rows = groupedData[base] || [];
+    rows.sort((a, b) => new Date(a[1].split('.').reverse().join('-')) - new Date(b[1].split('.').reverse().join('-')));
+
+    document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${base}</span>`;
+
+    let html = `<table class="w-full"><thead><tr>
+        <th>Дата</th><th class="text-right">ПКЗ</th><th class="text-right">Загрузка</th>
+        <th class="text-right">Продажи сегодня</th><th class="text-right">Продажи вчера</th>
+        <th class="text-right">ЗПК</th>
+    </tr></thead><tbody>`;
+
+    rows.forEach(row => {
+        const date = row[1] || '-';
+        const totalAU = parseInt(row[5] || 0);
+        const freeSeg = parseInt(row[6] || 0);
+        const originalFlight = cleanFlight(row[0]);
+        const key = `${date}|${originalFlight}`;
+        const sales = salesMap[key] || {today:0, yesterday:0};
+        const isClosed = closedFlights.has(key);
+        const isExtra = originalFlight !== base;
+        const flightDate = new Date(date.split('.').reverse().join('-'));
+        const isFlew = flightDate < new Date(new Date().setHours(0,0,0,0));
+
+        let statusHTML = isClosed ? `<span class="closed-text">ЗАКРЫТ</span>` : 
+                         isFlew ? `<span class="flew-text">УЛЕТЕЛ</span>` : 
+                         `<span class="${(totalAU > 0 ? Math.round(freeSeg/totalAU*100) : 0) >= 75 ? 'occupancy-high' : 'occupancy-med'}">${Math.round(freeSeg/totalAU*100) || 0}%</span>`;
+
+        html += `<tr class="${isExtra ? 'extra-flight' : ''}">
+            <td>${isExtra ? date + ' <span class="extra-badge">(ДОП)</span>' : date}</td>
+            <td class="text-right font-semibold">${totalAU}</td>
+            <td class="text-right font-semibold">${freeSeg}</td>
+            <td class="text-right font-semibold">${sales.today}</td>
+            <td class="text-right font-semibold">${sales.yesterday}</td>
+            <td class="text-right font-bold">${statusHTML}</td>
+        </tr>`;
+    });
+
+    html += `</tbody></table>`;
+    document.getElementById('table-container').innerHTML = html;
+    document.getElementById('table-container').classList.remove('hidden');
+}
+
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    files.sort((a, b) => b.lastModified - a.lastModified);
-    const latestTwo = files.slice(0, 2);
-
-    let loaded = 0;
+    const files = Array.from(e.target.files).sort((a,b)=>b.lastModified-a.lastModified).slice(0,2);
     allData = [];
-
-    latestTwo.forEach(file => {
+    let loaded = 0;
+    files.forEach(file => {
         const reader = new FileReader();
         reader.onload = ev => {
-            let lines = ev.target.result.split('\n').slice(3);
-            const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
-            allData = allData.concat(parsed);
+            const lines = ev.target.result.split('\n').slice(3);
+            allData = allData.concat(lines.filter(l=>l.trim()).map(l => l.split(';').map(f=>f.trim())));
             loaded++;
-            if (loaded === latestTwo.length) processData();
+            if (loaded === files.length) processData();
         };
         reader.readAsText(file, 'windows-1251');
     });
@@ -261,12 +220,11 @@ function handleAvailabilityUpload(e) {
 function triggerClosedUpload() { document.getElementById('closedInput').click(); }
 function handleClosedUpload(e) {
     const files = Array.from(e.target.files);
-    if (files.length === 0) return;
     let loaded = 0;
     files.forEach(file => {
         const reader = new FileReader();
         reader.onload = ev => {
-            let lines = ev.target.result.split('\n').slice(3);
+            const lines = ev.target.result.split('\n').slice(3);
             lines.forEach(line => {
                 if (!line.trim()) return;
                 const cols = line.split(';').map(f => f.trim());
@@ -286,36 +244,42 @@ function handleClosedUpload(e) {
 }
 
 function saveData() {
-    const data = { allData, salesMap, closedFlights: Array.from(closedFlights), timestamp: new Date().toISOString() };
+    const data = {allData, salesMap, closedFlights: Array.from(closedFlights), timestamp: new Date().toISOString()};
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('Все данные сохранены в krasavia-data.json');
+    alert('Данные сохранены!');
 }
 
 function refreshData() { location.reload(); }
 
 function showTab(n) {
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab' + n).classList.add('active');
-    document.getElementById('tab-content-0').classList.add('hidden');
-    document.getElementById('tab-content-1').classList.add('hidden');
-    document.getElementById('tab-content-' + n).classList.remove('hidden');
+    document.getElementById('tab'+n).classList.add('active');
+    document.getElementById('tab-content-0').classList.toggle('hidden', n!==0);
+    document.getElementById('tab-content-1').classList.toggle('hidden', n!==1);
 }
 
-async function loadSavedData() {
-    try {
-        const res = await fetch(DATA_FILE + '?t=' + Date.now());
-        if (res.ok) {
-            const saved = await res.json();
-            allData = saved.allData || [];
-            salesMap = saved.salesMap || {};
-            if (saved.closedFlights) closedFlights = new Set(saved.closedFlights);
+function showClosedReport() {
+    alert('Функция отчёта по закрытым рейсам в разработке');
+}
+
+function resetClosedFilters() {
+    // можно оставить пустым или добавить логику при необходимости
+}
+
+function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+
+window.onload = () => {
+    fetch(DATA_FILE + '?t=' + Date.now())
+        .then(r => r.ok ? r.json() : {})
+        .then(data => {
+            allData = data.allData || [];
+            salesMap = data.salesMap || {};
+            if (data.closedFlights) closedFlights = new Set(data.closedFlights);
             processData();
-        }
-    } catch(e) {}
-}
-
-window.onload = () => loadSavedData();
+        })
+        .catch(() => console.log('Свежие данные загружены'));
+};
