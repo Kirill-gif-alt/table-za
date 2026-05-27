@@ -66,15 +66,11 @@ function handleSalesUpload(e) {
         const rows = lines.slice(1).map(line => parseCSVLine(line));
 
         const dates = getTodayYesterday();
-        console.log('%c📅 Сегодня:', 'color:lime;font-weight:bold', dates.today);
-        console.log('%c📅 Вчера:', 'color:lime;font-weight:bold', dates.yesterday);
-
         salesMap = {};
         let salesCount = 0;
 
         rows.forEach(row => {
             if (row.length < 13) return;
-
             const flyDateRaw = row[7] || '';
             const reisRaw = row[12] || '';
             const dealDateRaw = row[5] || '';
@@ -87,7 +83,6 @@ function handleSalesUpload(e) {
             if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
 
             const dealNorm = normalizeDate(dealDateRaw);
-
             if (dealNorm === dates.today) salesMap[key].today++;
             else if (dealNorm === dates.yesterday) salesMap[key].yesterday++;
 
@@ -182,7 +177,6 @@ function selectFlight(base) {
             <th class="text-right">Продажи вчера</th>
             <th class="text-right">ЗПК</th>
         </tr>
-        <!-- СТРОКА С СУММАМИ СРАЗУ ПОД ШАПКОЙ -->
         <tr class="summary-row">
             <th></th>
             <th class="text-right"></th>
@@ -220,8 +214,12 @@ function selectFlight(base) {
             rowClass = isExtra ? 'extra-flight' : '';
         }
 
+        const dateCell = isExtra 
+            ? `${date} <span class="font-semibold">${originalFlight}</span> <span class="extra-badge ml-1">(ДОП)</span>` 
+            : date;
+
         html += `<tr class="${rowClass}">
-            <td>${isExtra ? date + ' <span class="extra-badge">(ДОП)</span>' : date}</td>
+            <td>${dateCell}</td>
             <td class="text-right font-semibold">${totalAU}</td>
             <td class="text-right font-semibold">${freeSeg}</td>
             <td class="text-right font-semibold">${sales.today}</td>
