@@ -8,18 +8,24 @@
 .header-font { font-family: 'Space Grotesk', sans-serif; }
 
 .krasavia-header { background: linear-gradient(90deg, #012A4A, #011F38); }
-.flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(1 42 74); }
+.flight-card { 
+    background: white; 
+    border-radius: 24px; 
+    box-shadow: 0 20px 40px -15px rgb(1 42 74 / 0.15); 
+    overflow: hidden;
+}
 
 table { 
-    border-collapse: collapse; 
+    border-collapse: separate; 
+    border-spacing: 0; 
     width: 100%; 
     font-size: 14px; 
-    min-width: 620px; 
+    min-width: 680px; 
     position: relative;
 }
 
 th, td { 
-    padding: 12px 12px; 
+    padding: 14px 16px; 
     text-align: left; 
     border-bottom: 1px solid #e5e7eb; 
 }
@@ -27,36 +33,54 @@ th, td {
 th { 
     background: #012A4A; 
     color: white; 
-    font-weight: 600; 
+    font-weight: 700; 
     position: sticky; 
     top: 0; 
-    z-index: 30; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 40; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
 }
 
-/* ВТОРАЯ СТРОКА (СУММЫ) — ТОЖЕ ЗАФИКСИРОВАНА СРАЗУ ПОД ШАПКОЙ */
+/* СТРОКА С СУММАМИ — ТОЖЕ ФИКСИРОВАНА СРАЗУ ПОД ШАПКОЙ */
 .summary-row {
     background: #012A4A !important;
     color: white !important;
     font-weight: 700;
     position: sticky;
-    top: 48px; /* высота первой шапки */
-    z-index: 25;
+    top: 52px; 
+    z-index: 35;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-td { color: #012A4A; font-weight: 500; }
+td { 
+    color: #012A4A; 
+    font-weight: 500; 
+}
 
 tr:hover { background: #f8fafc; }
 tr.extra-flight { background: #f3e8ff !important; }
 
+/* СЕРЫЕ ДЛЯ ЗАКРЫТЫХ И УЛЕТЕВШИХ */
 tr.closed-flight, 
 tr.flew-flight { 
     background: #e5e7eb !important; 
     color: #6b7280; 
+    font-weight: 500;
 }
 
-.extra-badge { color: #8B00FF; font-weight: 700; }
-.closed-text, .flew-text { color: #ef4444 !important; font-weight: 700; }
+.extra-badge { 
+    color: #8B00FF; 
+    font-weight: 700; 
+    background: #f3e8ff; 
+    padding: 2px 8px; 
+    border-radius: 9999px; 
+    font-size: 12px;
+}
+
+.closed-text, .flew-text { 
+    color: #ef4444 !important; 
+    font-weight: 700; 
+}
 
 .occupancy-high { color: #22C55E; font-weight: 700; }
 .occupancy-med  { color: #F59E0B; font-weight: 700; }
@@ -76,6 +100,6 @@ tr.flew-flight {
 
 @media (max-width: 768px) {
     table { font-size: 13px; min-width: 100%; }
-    th, td { padding: 10px 8px; }
-    .summary-row { top: 42px; }
+    th, td { padding: 12px 10px; }
+    .summary-row { top: 46px; }
 }
