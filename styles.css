@@ -15,7 +15,7 @@
 .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
 
 table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
-th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
 th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
 td { color: #012A4A; font-weight: 500; }
 
@@ -33,8 +33,8 @@ tr.extra-flight { background: #f3e8ff !important; }
 
 .path-box { background: #f1f5f9; border: 3px dashed #0474BC; border-radius: 20px; }
 
-/* Мобильная адаптация */
+/* Адаптив для телефона */
 @media (max-width: 768px) {
-    table { font-size: 13px; }
+    table { font-size: 13px; min-width: 100%; }
     th, td { padding: 10px 8px; }
 }
