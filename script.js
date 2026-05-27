@@ -108,22 +108,22 @@ function selectFlight(base) {
 
     let html = `<table class="w-full"><thead><tr>
         <th>Дата</th>
-        <th class="text-right">(мест в продаже)</th>
-        <th class="text-right">(загрузка)</th>
-        <th class="text-right">Продано сегодня</th>
-        <th class="text-right">Продано вчера</th>
+        <th class="text-right">ПКЗ</th>
         <th class="text-right">Загрузка</th>
+        <th class="text-right">Продажи за сегодня</th>
+        <th class="text-right">Продажи за вчера</th>
+        <th class="text-right">ЗПК</th>
     </tr></thead><tbody>`;
 
     rows.forEach(row => {
         const date = row[1] || '-';
-        const totalAU = parseInt(row[5] || 0);
-        const freeSeg = parseInt(row[6] || 0);
+        const totalAU = parseInt(row[5] || 0);   // ПКЗ
+        const freeSeg = parseInt(row[6] || 0);   // Загрузка (свободные места)
         const originalFlight = cleanFlight(row[0]);
         const key = `${date}|${originalFlight}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
         const isClosed = closedFlights.has(key);
-        const isExtra = originalFlight !== base;   // ← главное исправление
+        const isExtra = originalFlight !== base;
         const isFlew = isPastDate(date);
 
         let statusHTML = '';
@@ -200,7 +200,7 @@ function handleSalesUpload(e) {
             else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
         });
 
-        alert('✅ Продажи загружены! (сегодня/вчера по DEALDATE)');
+        alert('✅ Продажи загружены! (по DEALDATE)');
         if (currentFlight) selectFlight(currentFlight);
     };
     reader.readAsText(file, 'windows-1251');
