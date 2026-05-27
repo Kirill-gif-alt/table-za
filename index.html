@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>КРАСАВИА • Авиа-таблицы</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="tailwind-ready">
 
     <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
 
-        <!-- Мобильный заголовок + список рейсов сверху -->
+        <!-- Мобильный верх (список рейсов) -->
         <div class="md:hidden bg-white text-[#012A4A] border-b px-4 py-3 flex items-center gap-3 overflow-x-auto">
             <div class="flex-shrink-0 text-xl">✈️</div>
             <div id="mobile-flight-list" class="flex gap-2"></div>
@@ -18,7 +19,7 @@
 
         <div class="flex flex-1 overflow-hidden">
 
-            <!-- Боковая панель (только на ПК) -->
+            <!-- Боковая панель (только ПК) -->
             <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
                 <div class="p-6 border-b flex items-center gap-x-3">
                     <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
