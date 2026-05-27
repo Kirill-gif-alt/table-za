@@ -1,13 +1,11 @@
-// ====================== script.js ======================
 let allData = [];
 let salesMap = {};
-let closedFlights = new Set();   // ключ: "дата|рейс"
+let closedFlights = new Set();
 let groupedData = {};
 let currentFlight = null;
 
 const DATA_FILE = "./krasavia-data.json";
 
-// Обычные рейсы
 const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
 function cleanFlight(str) {
@@ -237,28 +235,19 @@ function saveData() {
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('✅ Все данные успешно сохранены в krasavia-data.json\n\nЗалей его в репозиторий рядом с index.html');
+    alert('✅ Все данные (доступность + продажи + закрытые рейсы) сохранены в krasavia-data.json');
 }
 
 function refreshData() { location.reload(); }
 
-// ====================== ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ ======================
-async function loadSavedData() {
-    try {
-        const res = await fetch(DATA_FILE + '?t=' + Date.now());
-        if (res.ok) {
-            const saved = await res.json();
-            allData = saved.allData || [];
-            salesMap = saved.salesMap || {};
-            if (saved.closedFlights) {
-                closedFlights = new Set(saved.closedFlights);
-            }
-            console.log('%c✅ Данные из krasavia-data.json успешно загружены', 'color:lime');
-            processData();
-        }
-    } catch(e) {
-        console.log('%cНет сохранённого файла данных или он недоступен', 'color:orange');
-    }
+// ====================== ВКЛАДКИ ======================
+function showTab(n) {
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab' + n).classList.add('active');
+
+    document.getElementById('tab-content-0').classList.add('hidden');
+    document.getElementById('tab-content-1').classList.add('hidden');
+    document.getElementById('tab-content-' + n).classList.remove('hidden');
 }
 
 window.onload = () => {
