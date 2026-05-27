@@ -55,6 +55,13 @@ function normalizeDate(d) {
     return d;
 }
 
+function isPastDate(dateStr) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const flightDate = parseDate(dateStr);
+    return flightDate < today;
+}
+
 function processData() {
     groupedData = {};
     allData.forEach(row => {
@@ -117,16 +124,25 @@ function selectFlight(base) {
         const sales = salesMap[key] || {today:0, yesterday:0};
         const isClosed = closedFlights.has(key);
         const isExtra = !isNormalFlight(cleanFlight(row[0]));
+        const isFlew = isPastDate(date);
 
-        let statusHTML = isClosed 
-            ? `<span class="closed-text">ЗАКРЫТ</span>` 
-            : (() => {
-                const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
-                const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
-                return `<span class="${cls}">${occ}%</span>`;
-            })();
+        let statusHTML = '';
+        let rowClass = '';
 
-        html += `<tr class="${isClosed ? 'closed-flight' : (isExtra ? 'extra-flight' : '')}">
+        if (isClosed) {
+            statusHTML = `<span class="closed-text">ЗАКРЫТ</span>`;
+            rowClass = 'closed-flight';
+        } else if (isFlew) {
+            statusHTML = `<span class="flew-text">УЛЕТЕЛ</span>`;
+            rowClass = 'flew-flight';
+        } else {
+            const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
+            const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
+            statusHTML = `<span class="${occClass}">${occupancy}%</span>`;
+            rowClass = isExtra ? 'extra-flight' : '';
+        }
+
+        html += `<tr class="${rowClass}">
             <td>${date} ${isExtra ? '<span class="extra-badge ml-2">(ДОП)</span>' : ''}</td>
             <td class="text-right font-semibold">${totalAU}</td>
             <td class="text-right font-semibold">${freeSeg}</td>
@@ -240,7 +256,6 @@ function saveData() {
 
 function refreshData() { location.reload(); }
 
-// ====================== ВКЛАДКИ ======================
 function showTab(n) {
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab' + n).classList.add('active');
@@ -250,7 +265,6 @@ function showTab(n) {
     document.getElementById('tab-content-' + n).classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ ======================
 async function loadSavedData() {
     try {
         const res = await fetch(DATA_FILE + '?t=' + Date.now());
