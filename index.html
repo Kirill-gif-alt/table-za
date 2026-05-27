@@ -11,13 +11,11 @@
 
     <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
 
-        <!-- Вкладки -->
         <div class="bg-white border-b px-4 flex text-sm md:text-base">
             <button onclick="showTab(0)" id="tab0" class="tab-button active px-6 py-4 font-medium">📊 Основная таблица</button>
             <button onclick="showTab(1)" id="tab1" class="tab-button px-6 py-4 font-medium">🚫 Отчет по закрытым рейсам</button>
         </div>
 
-        <!-- Основная таблица -->
         <div id="tab-content-0" class="flex flex-1 overflow-hidden">
             <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
                 <div class="p-6 border-b flex items-center gap-x-3">
@@ -47,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Отчет по закрытым рейсам -->
         <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
             <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center">
                 <input id="closedSearch" type="text" placeholder="Поиск по рейсу" class="border border-gray-300 rounded-3xl px-5 py-2 w-72 focus:outline-none">
