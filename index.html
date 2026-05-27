@@ -24,6 +24,7 @@
         .flight-item { transition: all 0.2s; }
         .flight-item:hover { background: #f1f5f9; }
         .flight-item.active { background: #0474BC; color: white; }
+        .extra-flight { color: #8B00FF; font-weight: 700; } /* фиолетовый для доп.рейсов */
     </style>
 </head>
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
@@ -37,8 +38,8 @@
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
             <div class="p-6 border-t flex flex-col gap-2">
-                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV (доступность)</button>
-                <button onclick="triggerSalesUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить продажи (Tickets_SALE_Last14Days.csv)</button>
+                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить доступность</button>
+                <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3 rounded-3xl font-medium">Загрузить продажи (Tickets_SALE_Last14Days.csv)</button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
                 <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
             </div>
@@ -67,9 +68,20 @@
         const csvConfig = { path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv" };
 
         let allData = [];
-        let salesData = [];           // ← данные из Tickets_SALE_Last14Days.csv
+        let salesData = [];
+        let salesMap = {}; // ключ: "дата|рейс" → {today: count, yesterday: count}
         let groupedData = {};
         let currentFlight = null;
+
+        function isExtraFlight(flight) {
+            const num = parseInt(flight.replace('KV-', '')) || 0;
+            if (num >= 300 && num <= 499) return true; // 3xx и 4xx — доп
+            if (num >= 200 && num <= 299) {
+                const exceptions = [203,204,211,212,213,214,215,216,209,210,247,248,249,250];
+                return !exceptions.includes(num);
+            }
+            return false; // 1xx — обычные
+        }
 
         function cleanFlight(str) {
             let f = String(str || '').trim().toUpperCase();
@@ -102,7 +114,10 @@
             groupedData = {};
             allData.forEach(row => {
                 if (row.length < 7) return;
-                const flight = cleanFlight(row[0]) || 'Неизвестный';
+                let flight = cleanFlight(row[0]) || 'Неизвестный';
+                let route = (row[3] || '').replace(/KCY/g, 'KJA'); // замена KCY → KJA
+                row[3] = route; // сохраняем замену
+
                 if (!groupedData[flight]) groupedData[flight] = [];
                 groupedData[flight].push(row);
             });
@@ -121,12 +136,13 @@
             container.innerHTML = '';
             Object.keys(groupedData).sort().forEach(flight => {
                 const count = groupedData[flight].length;
+                const isExtra = isExtraFlight(flight);
                 const div = document.createElement('div');
-                div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === flight ? 'active' : ''}`;
+                div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === flight ? 'active' : ''} ${isExtra ? 'extra-flight' : ''}`;
                 div.innerHTML = `
                     <div class="flex items-center gap-x-3">
                         <span class="text-xl">✈️</span>
-                        <span class="font-semibold">Рейс ${flight}</span>
+                        <span class="font-semibold">Рейс ${flight} ${isExtra ? '<span class="text-xs">(ДОП)</span>' : ''}</span>
                     </div>
                     <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
                 `;
@@ -152,6 +168,8 @@
                         <th>Дата</th>
                         <th class="text-right">(мест в продаже)</th>
                         <th class="text-right">(загрузка)</th>
+                        <th class="text-right">Продано сегодня</th>
+                        <th class="text-right">Продано вчера</th>
                         <th class="text-right">Загрузка</th>
                     </tr>
                 </thead>
@@ -163,6 +181,10 @@
                 const freeSeg  = parseInt(row[6] || 0);
                 const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
 
+                const key = `${date}|${cleanFlight(row[0])}`;
+                const salesToday = salesMap[key] ? salesMap[key].today || 0 : 0;
+                const salesYesterday = salesMap[key] ? salesMap[key].yesterday || 0 : 0;
+
                 const occClass = occupancy >= 75 ? 'occupancy-high' : 
                                (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
 
@@ -171,6 +193,8 @@
                         <td>${date}</td>
                         <td class="text-right font-semibold">${totalAU || '-'}</td>
                         <td class="text-right font-semibold">${freeSeg || '-'}</td>
+                        <td class="text-right font-semibold">${salesToday}</td>
+                        <td class="text-right font-semibold">${salesYesterday}</td>
                         <td class="text-right font-bold ${occClass}">${occupancy}%</td>
                     </tr>`;
             });
@@ -182,7 +206,6 @@
 
         function refreshData() { loadCSV(csvConfig.path); }
 
-        // === ЗАГРУЗКА ОСНОВНОГО CSV ===
         function triggerFileUpload() { document.getElementById('fileInput').click(); }
         function handleManualUpload(e) {
             const file = e.target.files[0];
@@ -197,7 +220,6 @@
             reader.readAsText(file, 'windows-1251');
         }
 
-        // === ЗАГРУЗКА CSV ПРОДАЖ (Tickets_SALE_Last14Days.csv) ===
         function triggerSalesUpload() { document.getElementById('salesInput').click(); }
         function handleSalesUpload(e) {
             const file = e.target.files[0];
@@ -205,12 +227,31 @@
             const reader = new FileReader();
             reader.onload = function(ev) {
                 let text = ev.target.result;
-                let lines = text.split('\n');
-                salesData = lines.filter(line => line.trim() !== '').map(line => line.split(',').map(f => f.trim())); // ← разделитель , в твоём файле
-                console.log('%c=== ПРОДАЖИ ЗАГРУЖЕНЫ ===', 'color: lime; font-size: 16px');
-                console.log('Всего строк:', salesData.length);
-                console.table(salesData.slice(0, 5)); // покажи первые 5 строк в консоли
-                alert('Файл продаж загружен! Структура выведена в консоль (F12). Сейчас добавим столбцы "продажа сегодня / вчера".');
+                let lines = text.split('\n').filter(l => l.trim() !== '');
+                salesData = lines.map(line => line.split(',').map(f => f.trim()));
+
+                // Строим карту продаж (сегодня = последняя дата в файле, вчера = предпоследняя)
+                salesMap = {};
+                const todayStr = salesData[1] ? salesData[1][0] : ''; // FileDate
+                const yesterdayStr = salesData[2] ? salesData[2][0] : '';
+
+                salesData.forEach(row => {
+                    if (row.length < 10) return;
+                    const flyDate = row[7] || ''; // FLYDATE (индекс может немного варьироваться)
+                    const reis = cleanFlight(row[12] || ''); // REIS (примерный индекс)
+                    if (!flyDate || !reis) return;
+
+                    const key = `${flyDate}|${reis}`;
+                    if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
+
+                    if (flyDate === todayStr) salesMap[key].today++;
+                    else if (flyDate === yesterdayStr) salesMap[key].yesterday++;
+                });
+
+                console.log('%c=== КАРТА ПРОДАЖ ГОТОВА ===', 'color: lime; font-size: 16px');
+                console.log('Пример ключа:', Object.keys(salesMap)[0]);
+                alert('Продажи успешно загружены! Столбцы "Продано сегодня / вчера" теперь работают.');
+                if (currentFlight) selectFlight(currentFlight);
             };
             reader.readAsText(file, 'windows-1251');
         }
