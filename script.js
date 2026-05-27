@@ -25,6 +25,7 @@ function isNormalFlight(flight) {
 function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
 
+    // Новые доп.рейсы по твоему запросу
     if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
     if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
     if (num === 261) return 'KV-161';
@@ -162,7 +163,7 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ПРОДАЖ ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ (DEALDATE) ======================
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 function handleSalesUpload(e) {
     const file = e.target.files[0];
@@ -175,6 +176,7 @@ function handleSalesUpload(e) {
 
         const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
 
+        // Собираем все уникальные DEALDATE и сортируем от новой к старой
         const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
         dealDates.sort((a, b) => parseDate(normalizeDate(b)) - parseDate(normalizeDate(a)));
 
@@ -201,7 +203,7 @@ function handleSalesUpload(e) {
             else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
         });
 
-        alert('✅ Продажи загружены! (сегодня/вчера по DEALDATE)');
+        alert('✅ Продажи загружены!\nСегодня и вчера посчитаны по DEALDATE');
         if (currentFlight) selectFlight(currentFlight);
     };
     reader.readAsText(file, 'windows-1251');
