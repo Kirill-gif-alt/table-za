@@ -5,28 +5,11 @@ let currentFlight = null;
 
 const DATA_FILE = "./krasavia-data.json";
 
-// Автозагрузка сохранённых данных
-async function loadSavedData() {
-    try {
-        const res = await fetch(DATA_FILE + '?t=' + Date.now());
-        if (res.ok) {
-            const saved = await res.json();
-            allData = saved.allData || [];
-            salesMap = saved.salesMap || {};
-            processData();
-        }
-    } catch(e) {}
-}
-
-function saveData() {
-    const data = { allData, salesMap, timestamp: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'krasavia-data.json';
-    a.click();
-    alert('✅ Файл krasavia-data.json скачан!\nЗалей его в репозиторий.');
-}
+// Обычные рейсы
+const NORMAL_FLIGHTS = new Set([
+    203,204,209,210,211,212,213,214,215,216,
+    225,226,247,248,249,250
+]);
 
 function cleanFlight(str) {
     let f = String(str || '').trim().toUpperCase();
@@ -34,71 +17,77 @@ function cleanFlight(str) {
     return f.substring(0, 6);
 }
 
-function getBaseFlight(flight) {
+function isNormalFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
-    if (num >= 300 && num <= 499) return `KV-${num - 200}`;
-    return flight;
-}
-
-function isExtraFlight(flight) {
-    let num = parseInt(flight.replace('KV-', '')) || 0;
-    const exceptions = [203,204,211,212,213,214,215,216,209,210,247,248,249,250,225,226];
-    if (num >= 200 && num <= 299) return !exceptions.includes(num);
-    if (num >= 300 && num <= 499) return true;
-    return false;
-}
-
-function parseDate(dateStr) {
-    if (!dateStr) return new Date(0);
-    const [day, month, year] = dateStr.split('.').map(Number);
-    return new Date(year, month - 1, day);
+    if (num >= 100 && num <= 199) return true;   // все 1xx — обычные
+    return NORMAL_FLIGHTS.has(num);
 }
 
 function processData() {
     groupedData = {};
+
+    // Сначала собираем карту: маршрут → baseFlight (только для обычных рейсов)
+    const routeToBase = new Map();
+
     allData.forEach(row => {
         if (row.length < 7) return;
-        let flight = cleanFlight(row[0]);
-        let base = getBaseFlight(flight);
-        if (!groupedData[base]) groupedData[base] = [];
-        groupedData[base].push(row);
+        const flight = cleanFlight(row[0]);
+        const route = (row[3] || '').trim();
+
+        if (isNormalFlight(flight)) {
+            if (!groupedData[flight]) groupedData[flight] = [];
+            groupedData[flight].push(row);
+
+            // Запоминаем маршрут → обычный рейс
+            if (route) routeToBase.set(route, flight);
+        }
+    });
+
+    // Теперь обрабатываем доп.рейсы
+    allData.forEach(row => {
+        if (row.length < 7) return;
+        const flight = cleanFlight(row[0]);
+        const route = (row[3] || '').trim();
+
+        if (isNormalFlight(flight)) return; // уже обработали
+
+        // Это доп.рейс — ищем обычный рейс с таким же маршрутом
+        let baseFlight = routeToBase.get(route);
+
+        if (!baseFlight) {
+            // Если не нашли по маршруту — fallback (можно убрать позже)
+            let num = parseInt(flight.replace('KV-', '')) || 0;
+            if (num >= 300 && num <= 499) baseFlight = `KV-${num - 200}`;
+            else baseFlight = flight;
+        }
+
+        if (!groupedData[baseFlight]) groupedData[baseFlight] = [];
+        groupedData[baseFlight].push(row);
     });
 
     renderFlightList();
-    if (Object.keys(groupedData).length > 0) selectFlight(Object.keys(groupedData).sort()[0]);
+    if (Object.keys(groupedData).length > 0) {
+        selectFlight(Object.keys(groupedData).sort()[0]);
+    }
 }
 
 function renderFlightList() {
     const container = document.getElementById('flight-list');
-    const mobileContainer = document.getElementById('mobile-flight-list');
     container.innerHTML = '';
-    if (mobileContainer) mobileContainer.innerHTML = '';
 
     Object.keys(groupedData).sort().forEach(base => {
         const count = groupedData[base].length;
-        const isExtra = isExtraFlight(base);
-
-        // Для ПК
         const div = document.createElement('div');
         div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === base ? 'active' : ''}`;
         div.innerHTML = `
             <div class="flex items-center gap-x-3">
                 <span class="text-xl">✈️</span>
-                <span class="font-semibold">Рейс ${base} ${isExtra ? '<span class="extra-badge">(ДОП)</span>' : ''}</span>
+                <span class="font-semibold">Рейс ${base}</span>
             </div>
             <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
         `;
         div.onclick = () => selectFlight(base);
         container.appendChild(div);
-
-        // Для телефона
-        if (mobileContainer) {
-            const mdiv = document.createElement('div');
-            mdiv.className = `px-4 py-2 bg-white border rounded-2xl cursor-pointer text-sm whitespace-nowrap ${currentFlight === base ? 'bg-[#0474BC] text-white' : ''}`;
-            mdiv.innerHTML = `Рейс ${base} ${isExtra ? '(ДОП)' : ''}`;
-            mdiv.onclick = () => selectFlight(base);
-            mobileContainer.appendChild(mdiv);
-        }
     });
 }
 
@@ -127,7 +116,7 @@ function selectFlight(base) {
         const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
         const key = `${date}|${cleanFlight(row[0])}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
-        const isExtra = isExtraFlight(cleanFlight(row[0]));
+        const isExtra = !isNormalFlight(cleanFlight(row[0]));
         const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
 
         html += `<tr class="${isExtra ? 'extra-flight' : ''}">
@@ -145,67 +134,13 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-function triggerAvailabilityUpload() {
-    document.getElementById('availabilityInput').click();
-}
+// Остальные функции (parseDate, normalizeDate, triggerAvailabilityUpload и т.д.) оставь как были раньше
+// (я не стал их копировать сюда, чтобы не было дублирования)
 
-function handleAvailabilityUpload(e) {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    files.sort((a, b) => b.lastModified - a.lastModified);
-    const latestTwo = files.slice(0, 2);
-
-    let loaded = 0;
-    allData = [];
-
-    latestTwo.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = ev => {
-            let lines = ev.target.result.split('\n').slice(3);
-            const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
-            allData = allData.concat(parsed);
-            loaded++;
-            if (loaded === latestTwo.length) processData();
-        };
-        reader.readAsText(file, 'windows-1251');
-    });
-}
-
-function triggerSalesUpload() {
-    document.getElementById('salesInput').click();
-}
-
-function handleSalesUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        let lines = ev.target.result.split('\n').filter(l => l.trim());
-        const rows = lines.map(l => l.split(',').map(f => f.trim()));
-        salesMap = {};
-        rows.forEach(row => {
-            if (row.length < 13) return;
-            const date = normalizeDate(row[7] || '');
-            const flight = cleanFlight(row[12] || '');
-            if (!date || !flight) return;
-            const key = `${date}|${flight}`;
-            if (!salesMap[key]) salesMap[key] = {today:0, yesterday:0};
-            const todayStr = normalizeDate(rows[1] ? rows[1][0] : '');
-            if (date === todayStr) salesMap[key].today++;
-            else if (rows[2] && date === normalizeDate(rows[2][0])) salesMap[key].yesterday++;
-        });
-        alert('✅ Продажи загружены!');
-        if (currentFlight) selectFlight(currentFlight);
-    };
-    reader.readAsText(file, 'windows-1251');
-}
-
-function normalizeDate(d) {
-    d = String(d || '').trim();
-    if (d.includes('.')) return d;
-    if (d.length === 8) return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
-    return d;
+function parseDate(dateStr) {
+    if (!dateStr) return new Date(0);
+    const [day, month, year] = dateStr.split('.').map(Number);
+    return new Date(year, month - 1, day);
 }
 
 function refreshData() { location.reload(); }
