@@ -163,9 +163,15 @@ function selectFlight(base) {
 
     document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${base}</span>`;
 
+    let todaySum = 0;
+    let yesterdaySum = 0;
+
     let html = `<table class="w-full"><thead><tr>
-        <th>Дата</th><th class="text-right">ПКЗ</th><th class="text-right">Загрузка</th>
-        <th class="text-right">Продажи сегодня</th><th class="text-right">Продажи вчера</th>
+        <th>Дата</th>
+        <th class="text-right">ПКЗ</th>
+        <th class="text-right">Загрузка</th>
+        <th class="text-right">Продажи сегодня</th>
+        <th class="text-right">Продажи вчера</th>
         <th class="text-right">ЗПК</th>
     </tr></thead><tbody>`;
 
@@ -176,16 +182,29 @@ function selectFlight(base) {
         const originalFlight = cleanFlight(row[0]);
         const key = `${date}|${originalFlight}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
+
+        todaySum += sales.today;
+        yesterdaySum += sales.yesterday;
+
         const isClosed = closedFlights.has(key);
         const isExtra = originalFlight !== base;
         const flightDate = new Date(date.split('.').reverse().join('-'));
         const isFlew = flightDate < new Date(new Date().setHours(0,0,0,0));
 
-        let statusHTML = isClosed ? `<span class="closed-text">ЗАКРЫТ</span>` : 
-                         isFlew ? `<span class="flew-text">УЛЕТЕЛ</span>` : 
-                         `<span class="${(totalAU > 0 ? Math.round(freeSeg/totalAU*100) : 0) >= 75 ? 'occupancy-high' : 'occupancy-med'}">${Math.round(freeSeg/totalAU*100) || 0}%</span>`;
+        let rowClass = '';
+        let statusHTML = '';
 
-        html += `<tr class="${isExtra ? 'extra-flight' : ''}">
+        if (isClosed || isFlew) {
+            rowClass = 'closed-flight'; // теперь оба серые
+            statusHTML = isClosed ? `<span class="closed-text">ЗАКРЫТ</span>` : `<span class="flew-text">УЛЕТЕЛ</span>`;
+        } else {
+            const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
+            const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
+            statusHTML = `<span class="${cls}">${occ}%</span>`;
+            rowClass = isExtra ? 'extra-flight' : '';
+        }
+
+        html += `<tr class="${rowClass}">
             <td>${isExtra ? date + ' <span class="extra-badge">(ДОП)</span>' : date}</td>
             <td class="text-right font-semibold">${totalAU}</td>
             <td class="text-right font-semibold">${freeSeg}</td>
@@ -195,11 +214,21 @@ function selectFlight(base) {
         </tr>`;
     });
 
-    html += `</tbody></table>`;
+    // ИТОГОВАЯ СТРОКА С СУММАМИ
+    html += `</tbody><tfoot><tr>
+        <td class="font-bold">ИТОГО</td>
+        <td></td>
+        <td></td>
+        <td class="text-right font-bold">${todaySum}</td>
+        <td class="text-right font-bold">${yesterdaySum}</td>
+        <td></td>
+    </tr></tfoot></table>`;
+
     document.getElementById('table-container').innerHTML = html;
     document.getElementById('table-container').classList.remove('hidden');
 }
 
+// === ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ===
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
     const files = Array.from(e.target.files).sort((a,b)=>b.lastModified-a.lastModified).slice(0,2);
@@ -262,13 +291,8 @@ function showTab(n) {
     document.getElementById('tab-content-1').classList.toggle('hidden', n!==1);
 }
 
-function showClosedReport() {
-    alert('Функция отчёта по закрытым рейсам в разработке');
-}
-
-function resetClosedFilters() {
-    // можно оставить пустым или добавить логику при необходимости
-}
+function showClosedReport() { alert('Функция отчёта по закрытым рейсам в разработке'); }
+function resetClosedFilters() { }
 
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 
