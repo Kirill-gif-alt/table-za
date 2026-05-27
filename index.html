@@ -29,9 +29,17 @@
             </div>
         </div>
 
-        <!-- ПРАВАЯ ЧАСТЬ — ТАБЛИЦА СРАЗУ СВЕРХУ -->
+        <!-- ПРАВАЯ ЧАСТЬ — ТАБЛИЦА -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <div id="table-container" class="flex-1 overflow-auto flight-card p-0"></div>
+            <!-- Маленький заголовок рейса (нужен для скрипта) -->
+            <div class="bg-[#012A4A] px-8 py-3 flex items-center justify-between text-white">
+                <div id="selected-flight-title" class="text-xl font-semibold"></div>
+            </div>
+
+            <!-- Сама таблица -->
+            <div class="flex-1 p-2 overflow-auto">
+                <div id="table-container" class="flight-card h-full"></div>
+            </div>
         </div>
     </div>
 
