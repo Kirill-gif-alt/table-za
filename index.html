@@ -12,9 +12,9 @@
     <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
 
         <!-- Вкладки -->
-        <div class="bg-white border-b px-6 flex">
-            <button onclick="showTab(0)" id="tab0" class="tab-button active px-8 py-4 font-medium">📊 Основная таблица</button>
-            <button onclick="showTab(1)" id="tab1" class="tab-button px-8 py-4 font-medium">📅 Отчет по периоду</button>
+        <div class="bg-white border-b px-4 flex text-sm">
+            <button onclick="showTab(0)" id="tab0" class="tab-button active px-6 py-4 font-medium">📊 Основная таблица</button>
+            <button onclick="showTab(1)" id="tab1" class="tab-button px-6 py-4 font-medium">🚫 Отчет по закрытым рейсам</button>
         </div>
 
         <!-- Основная таблица -->
@@ -38,7 +38,7 @@
                         ➕ Добавить закрытые рейсы
                     </button>
                     <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-3xl font-medium">
-                        💾 Сохранить все данные
+                        💾 Сохранить данные
                     </button>
                 </div>
             </div>
@@ -59,16 +59,15 @@
             </div>
         </div>
 
-        <!-- Отчет по периоду -->
+        <!-- Отчет по закрытым рейсам -->
         <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
             <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center">
-                <input id="reportDateFrom" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
-                <span class="text-gray-500">—</span>
-                <input id="reportDateTo" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
-                <button onclick="showPeriodReport()" class="bg-blue-600 text-white px-8 py-2 rounded-3xl font-medium">Показать рейсы за период</button>
+                <input id="closedSearch" type="text" placeholder="Поиск по рейсу" class="border border-gray-300 rounded-3xl px-5 py-2 w-72 focus:outline-none">
+                <button onclick="showClosedReport()" class="bg-gray-700 text-white px-8 py-2 rounded-3xl font-medium">Показать закрытые рейсы</button>
+                <button onclick="resetClosedFilters()" class="text-gray-500">Сбросить</button>
             </div>
             <div class="flex-1 p-6 overflow-auto">
-                <div id="period-report-container" class="flight-card p-6"></div>
+                <div id="closed-report-container" class="flight-card p-6"></div>
             </div>
         </div>
     </div>
