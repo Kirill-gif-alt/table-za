@@ -14,27 +14,13 @@
         .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
         .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
         table { border-collapse: collapse; width: 100%; font-size: 14px; }
-        th, td { 
-            padding: 12px 16px; 
-            text-align: left; 
-            border-bottom: 1px solid #e5e7eb; 
-        }
-        th { 
-            background: #012A4A; 
-            color: white; 
-            font-weight: 600; 
-            position: sticky; 
-            top: 0; 
-            z-index: 10; 
-        }
-        td { 
-            color: #012A4A;           /* ← ФИКС: тёмный текст на белом фоне */
-            font-weight: 500;
-        }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        td { color: #012A4A; font-weight: 500; }
         tr:hover { background: #f8fafc; }
-        .occupancy-high { color: #10b981; font-weight: 700; }
-        .occupancy-med  { color: #f59e0b; font-weight: 700; }
-        .occupancy-low  { color: #ef4444; font-weight: 700; }
+        .occupancy-high { color: #22C55E; font-weight: 700; }
+        .occupancy-med  { color: #F59E0B; font-weight: 700; }
+        .occupancy-low  { color: #EF4444; font-weight: 700; }
         .flight-item { transition: all 0.2s; }
         .flight-item:hover { background: #f1f5f9; }
         .flight-item.active { background: #0474BC; color: white; }
@@ -50,9 +36,11 @@
             </div>
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
-            <div class="p-6 border-t">
-                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV</button>
+            <div class="p-6 border-t flex flex-col gap-2">
+                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV (доступность)</button>
+                <button onclick="triggerSalesUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить продажи (Tickets_SALE_Last14Days.csv)</button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
+                <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
             </div>
         </div>
 
@@ -79,6 +67,7 @@
         const csvConfig = { path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv" };
 
         let allData = [];
+        let salesData = [];           // ← данные из Tickets_SALE_Last14Days.csv
         let groupedData = {};
         let currentFlight = null;
 
@@ -161,8 +150,8 @@
                 <thead>
                     <tr>
                         <th>Дата</th>
-                        <th class="text-right">Total AU</th>
-                        <th class="text-right">Free SegBkd</th>
+                        <th class="text-right">(мест в продаже)</th>
+                        <th class="text-right">(загрузка)</th>
                         <th class="text-right">Загрузка</th>
                     </tr>
                 </thead>
@@ -172,7 +161,7 @@
                 const date     = row[1] || '-';
                 const totalAU  = parseInt(row[5] || 0);
                 const freeSeg  = parseInt(row[6] || 0);
-                const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
+                const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
 
                 const occClass = occupancy >= 75 ? 'occupancy-high' : 
                                (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
@@ -192,8 +181,9 @@
         }
 
         function refreshData() { loadCSV(csvConfig.path); }
-        function triggerFileUpload() { document.getElementById('fileInput').click(); }
 
+        // === ЗАГРУЗКА ОСНОВНОГО CSV ===
+        function triggerFileUpload() { document.getElementById('fileInput').click(); }
         function handleManualUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -203,6 +193,24 @@
                 let lines = text.split('\n').slice(3);
                 allData = lines.filter(line => line.trim() !== '').map(line => line.split(';').map(f => f.trim()));
                 processData();
+            };
+            reader.readAsText(file, 'windows-1251');
+        }
+
+        // === ЗАГРУЗКА CSV ПРОДАЖ (Tickets_SALE_Last14Days.csv) ===
+        function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+        function handleSalesUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                let text = ev.target.result;
+                let lines = text.split('\n');
+                salesData = lines.filter(line => line.trim() !== '').map(line => line.split(',').map(f => f.trim())); // ← разделитель , в твоём файле
+                console.log('%c=== ПРОДАЖИ ЗАГРУЖЕНЫ ===', 'color: lime; font-size: 16px');
+                console.log('Всего строк:', salesData.length);
+                console.table(salesData.slice(0, 5)); // покажи первые 5 строк в консоли
+                alert('Файл продаж загружен! Структура выведена в консоль (F12). Сейчас добавим столбцы "продажа сегодня / вчера".');
             };
             reader.readAsText(file, 'windows-1251');
         }
