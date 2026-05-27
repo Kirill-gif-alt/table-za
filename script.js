@@ -7,11 +7,8 @@ let currentFlight = null;
 
 const DATA_FILE = "./krasavia-data.json";
 
-// Обычные рейсы (не помечаем как ДОП)
-const NORMAL_FLIGHTS = new Set([
-    203, 204, 209, 210, 211, 212, 213, 214, 215, 216,
-    225, 226, 247, 248, 249, 250
-]);
+// Обычные рейсы
+const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
 function cleanFlight(str) {
     let f = String(str || '').trim().toUpperCase();
@@ -25,28 +22,20 @@ function isNormalFlight(flight) {
     return NORMAL_FLIGHTS.has(num);
 }
 
-// Главная функция — определяет, в какую группу попадёт рейс
-function getBaseFlight(flight, route = '') {
+function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
 
-    // Специальные случаи
     if (num === 261) return 'KV-161';
     if (num === 262) return 'KV-162';
-    if (num === 325) return 'KV-225';
     if (num === 253) return 'KV-153';
     if (num === 254) return 'KV-154';
     if (num === 273) return 'KV-173';
     if (num === 274) return 'KV-174';
+    if (num === 325) return 'KV-225';
+    if (num === 326) return 'KV-226';
 
-    // 3xx и 4xx — ищем по маршруту среди обычных рейсов
-    if (num >= 300 && num <= 499) {
-        // Если есть маршрут — пытаемся найти обычный рейс с таким же маршрутом
-        if (route) {
-            // Здесь можно сделать поиск, но пока оставляем стандартное поведение
-            return `KV-${num - 200}`;
-        }
-        return `KV-${num - 200}`;
-    }
+    if (num >= 300 && num <= 399) return `KV-${num - 200}`;
+    if (num >= 400 && num <= 499) return `KV-${num - 300}`;
 
     return flight;
 }
@@ -66,13 +55,10 @@ function normalizeDate(d) {
 
 function processData() {
     groupedData = {};
-
     allData.forEach(row => {
         if (row.length < 7) return;
         let flight = cleanFlight(row[0]);
-        let route = (row[3] || '').trim();
-        let base = getBaseFlight(flight, route);
-
+        let base = getBaseFlight(flight);
         if (!groupedData[base]) groupedData[base] = [];
         groupedData[base].push(row);
     });
@@ -130,14 +116,13 @@ function selectFlight(base) {
         const isClosed = closedFlights.has(key);
         const isExtra = !isNormalFlight(cleanFlight(row[0]));
 
-        let statusHTML = '';
-        if (isClosed) {
-            statusHTML = `<span class="closed-text">ЗАКРЫТ</span>`;
-        } else {
-            const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
-            const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
-            statusHTML = `<span class="${occClass}">${occupancy}%</span>`;
-        }
+        let statusHTML = isClosed 
+            ? `<span class="closed-text">ЗАКРЫТ</span>` 
+            : (() => {
+                const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
+                const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
+                return `<span class="${cls}">${occ}%</span>`;
+            })();
 
         html += `<tr class="${isClosed ? 'closed-flight' : (isExtra ? 'extra-flight' : '')}">
             <td>${date} ${isExtra ? '<span class="extra-badge ml-2">(ДОП)</span>' : ''}</td>
@@ -154,7 +139,7 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ФАЙЛОВ ======================
+// ====================== ЗАГРУЗКА ======================
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
     const files = Array.from(e.target.files);
@@ -208,8 +193,9 @@ function handleSalesUpload(e) {
 function triggerClosedUpload() { document.getElementById('closedInput').click(); }
 function handleClosedUpload(e) {
     const files = Array.from(e.target.files);
-    let loaded = 0;
+    if (files.length === 0) return;
 
+    let loaded = 0;
     files.forEach(file => {
         const reader = new FileReader();
         reader.onload = ev => {
@@ -244,7 +230,7 @@ function saveData() {
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('✅ Все данные (доступность + продажи + закрытые рейсы) сохранены в krasavia-data.json');
+    alert('✅ Все данные сохранены в krasavia-data.json\n\nЗалей этот файл в репозиторий.');
 }
 
 function refreshData() { location.reload(); }
