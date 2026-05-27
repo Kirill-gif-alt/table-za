@@ -88,13 +88,10 @@ function handleSalesUpload(e) {
 
             const dealNorm = normalizeDate(dealDateRaw);
 
-            if (dealNorm === dates.today) {
-                salesMap[key].today++;
-                salesCount++;
-            } else if (dealNorm === dates.yesterday) {
-                salesMap[key].yesterday++;
-                salesCount++;
-            }
+            if (dealNorm === dates.today) salesMap[key].today++;
+            else if (dealNorm === dates.yesterday) salesMap[key].yesterday++;
+
+            salesCount++;
         });
 
         console.log(`%c✅ ЗАГРУЖЕНО ПРОДАЖ: ${salesCount}`, 'color:lime;font-size:18px');
@@ -166,14 +163,36 @@ function selectFlight(base) {
     let todaySum = 0;
     let yesterdaySum = 0;
 
-    let html = `<table class="w-full"><thead><tr>
-        <th>Дата</th>
-        <th class="text-right">ПКЗ</th>
-        <th class="text-right">Загрузка</th>
-        <th class="text-right">Продажи сегодня</th>
-        <th class="text-right">Продажи вчера</th>
-        <th class="text-right">ЗПК</th>
-    </tr></thead><tbody>`;
+    rows.forEach(row => {
+        const date = row[1] || '-';
+        const originalFlight = cleanFlight(row[0]);
+        const key = `${date}|${originalFlight}`;
+        const sales = salesMap[key] || {today:0, yesterday:0};
+        todaySum += sales.today;
+        yesterdaySum += sales.yesterday;
+    });
+
+    let html = `<table class="w-full">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th class="text-right">ПКЗ</th>
+            <th class="text-right">Загрузка</th>
+            <th class="text-right">Продажи сегодня</th>
+            <th class="text-right">Продажи вчера</th>
+            <th class="text-right">ЗПК</th>
+        </tr>
+        <!-- СТРОКА С СУММАМИ СРАЗУ ПОД ШАПКОЙ -->
+        <tr class="summary-row">
+            <th></th>
+            <th class="text-right"></th>
+            <th class="text-right"></th>
+            <th class="text-right">${todaySum}</th>
+            <th class="text-right">${yesterdaySum}</th>
+            <th class="text-right"></th>
+        </tr>
+    </thead>
+    <tbody>`;
 
     rows.forEach(row => {
         const date = row[1] || '-';
@@ -182,9 +201,6 @@ function selectFlight(base) {
         const originalFlight = cleanFlight(row[0]);
         const key = `${date}|${originalFlight}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
-
-        todaySum += sales.today;
-        yesterdaySum += sales.yesterday;
 
         const isClosed = closedFlights.has(key);
         const isExtra = originalFlight !== base;
@@ -195,7 +211,7 @@ function selectFlight(base) {
         let statusHTML = '';
 
         if (isClosed || isFlew) {
-            rowClass = 'closed-flight'; // теперь оба серые
+            rowClass = 'closed-flight';
             statusHTML = isClosed ? `<span class="closed-text">ЗАКРЫТ</span>` : `<span class="flew-text">УЛЕТЕЛ</span>`;
         } else {
             const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
@@ -214,15 +230,7 @@ function selectFlight(base) {
         </tr>`;
     });
 
-    // ИТОГОВАЯ СТРОКА С СУММАМИ
-    html += `</tbody><tfoot><tr>
-        <td class="font-bold">ИТОГО</td>
-        <td></td>
-        <td></td>
-        <td class="text-right font-bold">${todaySum}</td>
-        <td class="text-right font-bold">${yesterdaySum}</td>
-        <td></td>
-    </tr></tfoot></table>`;
+    html += `</tbody></table>`;
 
     document.getElementById('table-container').innerHTML = html;
     document.getElementById('table-container').classList.remove('hidden');
