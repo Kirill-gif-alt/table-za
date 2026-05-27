@@ -39,7 +39,7 @@ th {
     background: #012A4A !important;
     color: white !important;
     position: sticky; 
-    top: 54px; 
+    top: 52px; 
     z-index: 45;
 }
 
@@ -53,17 +53,15 @@ tr:hover { background: #f8fafc; transform: scale(1.01); }
 tr.extra-flight { background: #f3e8ff !important; }
 tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b7280; }
 
-/* Подсветка выбранного рейса в меню */
 .flight-item.active {
-    background: #e0f2ff !important;     /* прозрачно-голубой */
+    background: #e0f2ff !important;
     color: #012A4A;
     box-shadow: 0 0 0 3px rgba(0, 183, 255, 0.3);
 }
 
-/* Цвета процентов ЗПК */
-.occupancy-high { color: #22C55E; font-weight: 700; }   /* зелёный */
-.occupancy-med  { color: #F59E0B; font-weight: 700; }   /* оранжевый */
-.occupancy-low  { color: #EF4444; font-weight: 700; }   /* красный */
+.occupancy-high { color: #22C55E; font-weight: 700; }
+.occupancy-med  { color: #F59E0B; font-weight: 700; }
+.occupancy-low  { color: #EF4444; font-weight: 700; }
 
 .extra-badge { 
     color: #8B00FF; 
@@ -73,5 +71,4 @@ tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b728
     font-size: 13px;
 }
 
-.flight-item { transition: all 0.2s; }
 .flight-item:hover { background: #f1f5f9; }
