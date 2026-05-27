@@ -15,7 +15,7 @@
         .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
         .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
         table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
         tr:hover { background: #f8fafc; }
         .occupancy-high { color: #10b981; font-weight: 700; }
@@ -55,16 +55,23 @@
     </div>
 
     <script>
-        // ====================== КОНФИГУРАЦИЯ ======================
         const csvConfig = {
-            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← поменяй, если имя файла другое
+            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",
             displayName: "RepRaidAvailSeg"
         };
 
         let allData = [];
 
-        function normalizeHeader(header) {
-            return String(header).trim().replace(/\s+/g, ' ');
+        function findColumn(row, possibleNames) {
+            for (let key in row) {
+                const normalizedKey = String(key).trim().toLowerCase();
+                for (let name of possibleNames) {
+                    if (normalizedKey.includes(name.toLowerCase())) {
+                        return row[key];
+                    }
+                }
+            }
+            return '-';
         }
 
         async function loadCSV(filePath) {
@@ -72,17 +79,15 @@
             document.getElementById('tables-container').innerHTML = '';
 
             try {
-                const response = await fetch(filePath);
-                if (!response.ok) throw new Error('Файл не найден');
-
-                const csvText = await response.text();
+                const res = await fetch(filePath);
+                if (!res.ok) throw new Error('Файл не найден');
+                const csvText = await res.text();
 
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
-                    dynamicTyping: false,
                     complete: function(results) {
-                        console.log("🔍 Найденные заголовки:", results.meta.fields); // для отладки
+                        console.log("🔍 Заголовки CSV:", results.meta.fields);
                         allData = results.data;
                         processData();
                     }
@@ -97,17 +102,9 @@
             const grouped = {};
 
             allData.forEach(row => {
-                // Ищем колонку с рейсом (самая устойчивая версия)
-                let flightKey = 
-                    row['Рейс'] || 
-                    row['рейс'] || 
-                    row['Flight'] || 
-                    row['Код рейса'] || 
-                    Object.values(row).find(v => String(v).startsWith('KV-') || String(v).startsWith('KV')) ||
-                    'Неизвестный рейс';
-
-                if (!grouped[flightKey]) grouped[flightKey] = [];
-                grouped[flightKey].push(row);
+                const flight = findColumn(row, ['Рейс', 'рейс', 'Flight', 'KV-']) || 'Неизвестный рейс';
+                if (!grouped[flight]) grouped[flight] = [];
+                grouped[flight].push(row);
             });
 
             renderAllTables(grouped);
@@ -147,8 +144,11 @@
                         <tbody>`;
 
                 rows.forEach(row => {
-                    const totalAU = parseInt(row['Total AU'] || row['Total AU '] || row['TotalAU'] || 0);
-                    const freeSeg = parseInt(row['Free SegBkd'] || row['Free SegBkd '] || 0);
+                    const date = findColumn(row, ['Дата', 'date']);
+                    const segment = findColumn(row, ['Сегмент', 'segment']);
+                    const route = findColumn(row, ['Маршрут', 'route']);
+                    const totalAU = parseInt(findColumn(row, ['Total AU', 'TotalAU', 'total au']) || 0);
+                    const freeSeg = parseInt(findColumn(row, ['Free SegBkd', 'FreeSegBkd', 'free seg']) || 0);
                     const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
                     const occClass = occupancy >= 75 ? 'occupancy-high' : 
@@ -156,9 +156,9 @@
 
                     html += `
                         <tr>
-                            <td>${row['Дата'] || '-'}</td>
-                            <td>${row['Сегмент'] || '-'}</td>
-                            <td>${row['Маршрут'] || '-'}</td>
+                            <td>${date}</td>
+                            <td>${segment}</td>
+                            <td>${route}</td>
                             <td class="text-right font-semibold">${totalAU || '-'}</td>
                             <td class="text-right font-semibold">${freeSeg || '-'}</td>
                             <td class="text-right font-bold ${occClass}">${occupancy}%</td>
