@@ -235,19 +235,33 @@ function saveData() {
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('✅ Все данные (доступность + продажи + закрытые рейсы) сохранены в krasavia-data.json');
+    alert('✅ Все данные сохранены в krasavia-data.json');
 }
 
 function refreshData() { location.reload(); }
 
 // ====================== ВКЛАДКИ ======================
 function showTab(n) {
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab' + n).classList.add('active');
 
     document.getElementById('tab-content-0').classList.add('hidden');
     document.getElementById('tab-content-1').classList.add('hidden');
     document.getElementById('tab-content-' + n).classList.remove('hidden');
+}
+
+// ====================== ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ ======================
+async function loadSavedData() {
+    try {
+        const res = await fetch(DATA_FILE + '?t=' + Date.now());
+        if (res.ok) {
+            const saved = await res.json();
+            allData = saved.allData || [];
+            salesMap = saved.salesMap || {};
+            if (saved.closedFlights) closedFlights = new Set(saved.closedFlights);
+            processData();
+        }
+    } catch(e) {}
 }
 
 window.onload = () => {
