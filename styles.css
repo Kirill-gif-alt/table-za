@@ -22,37 +22,49 @@ table {
     width: 100%; 
     font-size: 15px; 
     min-width: 820px;
+    table-layout: fixed;
 }
 
+/* НАДЁЖНАЯ ФИКСАЦИЯ ШАПКИ */
 th { 
     background: #012A4A; 
     color: white; 
     font-weight: 700; 
     position: sticky; 
     top: 0; 
-    z-index: 50; 
+    z-index: 60; 
     padding: 18px 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-size: 15px;
 }
 
+/* СТРОКА СУММ — ТОЖЕ ФИКСИРОВАНА */
 .summary-row th {
     background: #012A4A !important;
     color: white !important;
     position: sticky; 
-    top: 52px; 
-    z-index: 45;
+    top: 53px; 
+    z-index: 55;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 td { 
-    padding: 16px 18px; 
+    padding: 15px 18px; 
     border-bottom: 1px solid #f1f5f9; 
     color: #012A4A;
+    font-size: 15px;
+    text-align: left;
 }
 
-tr:hover { background: #f8fafc; transform: scale(1.01); }
+/* ЧЕРЕДОВАНИЕ ПО НЕДЕЛЯМ */
+tr.week-even { background: #e0f2ff !important; }
+tr.week-odd  { background: #ffffff !important; }
+
+tr:hover { background: #f0f9ff !important; transform: scale(1.01); }
 tr.extra-flight { background: #f3e8ff !important; }
 tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b7280; }
 
+/* Подсветка выбранного рейса */
 .flight-item.active {
     background: #e0f2ff !important;
     color: #012A4A;
