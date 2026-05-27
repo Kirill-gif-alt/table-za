@@ -14,12 +14,11 @@
         <!-- Вкладки -->
         <div class="bg-white border-b px-6 flex">
             <button onclick="showTab(0)" id="tab0" class="tab-button active px-8 py-4 font-medium">📊 Основная таблица</button>
-            <button onclick="showTab(1)" id="tab1" class="tab-button px-8 py-4 font-medium">🚫 Отчет по закрытым рейсам</button>
+            <button onclick="showTab(1)" id="tab1" class="tab-button px-8 py-4 font-medium">📅 Отчет по периоду</button>
         </div>
 
-        <!-- Вкладка 1 - Основная таблица -->
+        <!-- Основная таблица -->
         <div id="tab-content-0" class="flex flex-1 overflow-hidden">
-            <!-- Боковая панель -->
             <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
                 <div class="p-6 border-b flex items-center gap-x-3">
                     <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
@@ -44,12 +43,12 @@
                 </div>
             </div>
 
-            <!-- Таблица -->
             <div class="flex-1 flex flex-col">
                 <div class="krasavia-header px-6 py-5 flex items-center justify-between">
                     <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
                     <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
                 </div>
+
                 <div class="flex-1 p-4 md:p-8 overflow-auto">
                     <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                         <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
@@ -60,15 +59,16 @@
             </div>
         </div>
 
-        <!-- Вкладка 2 - Отчет по закрытым рейсам -->
+        <!-- Отчет по периоду -->
         <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
             <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center">
-                <input id="closedSearch" type="text" placeholder="Поиск по рейсу" class="border border-gray-300 rounded-3xl px-5 py-2 w-72 focus:outline-none">
-                <button onclick="showClosedReport()" class="bg-gray-700 text-white px-8 py-2 rounded-3xl font-medium">Показать закрытые рейсы</button>
-                <button onclick="resetClosedFilters()" class="text-gray-500">Сбросить</button>
+                <input id="reportDateFrom" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
+                <span class="text-gray-500">—</span>
+                <input id="reportDateTo" type="date" class="border border-gray-300 rounded-3xl px-5 py-2">
+                <button onclick="showPeriodReport()" class="bg-blue-600 text-white px-8 py-2 rounded-3xl font-medium">Показать рейсы за период</button>
             </div>
             <div class="flex-1 p-6 overflow-auto">
-                <div id="closed-report-container" class="flight-card p-6"></div>
+                <div id="period-report-container" class="flight-card p-6"></div>
             </div>
         </div>
     </div>
