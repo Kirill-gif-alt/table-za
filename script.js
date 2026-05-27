@@ -161,47 +161,78 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ПРОДАЖ ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ С ПОДРОБНОЙ ОТЛАДКОЙ ======================
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 function handleSalesUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    console.log('%c=== НАЧАЛО ЗАГРУЗКИ ПРОДАЖ ===', 'color:orange;font-weight:bold');
+
     const reader = new FileReader();
     reader.onload = ev => {
         const lines = ev.target.result.split('\n').filter(l => l.trim());
-        if (lines.length < 2) return;
+        console.log('Всего строк в файле:', lines.length);
 
         const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
 
-        const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
-        // Сортируем численно (DDMMYYYY) — больший номер = новее
-        dealDates.sort((a, b) => parseInt(b) - parseInt(a));
+        // Показываем первые 5 строк для понимания структуры
+        console.log('Первые 5 строк CSV:');
+        console.table(rows.slice(0,5));
 
-        const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
-        const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
+        // Все уникальные DEALDATE
+        const dealDatesRaw = [...new Set(rows.map(r => r[5]).filter(Boolean))];
+        console.log('Все сырые DEALDATE:', dealDatesRaw);
+
+        // Сортируем как числа DDMMYYYY (большее число = новее)
+        dealDatesRaw.sort((a, b) => parseInt(b) - parseInt(a));
+        console.log('Отсортированные DEALDATE (новые сверху):', dealDatesRaw);
+
+        const todayDealRaw = dealDatesRaw[0];
+        const yesterdayDealRaw = dealDatesRaw[1];
+
+        const todayDeal = normalizeDate(todayDealRaw);
+        const yesterdayDeal = normalizeDate(yesterdayDealRaw);
+
+        console.log('%cСегодняшняя DEALDATE (сырая):', 'color:lime', todayDealRaw, '→ нормализованная:', todayDeal);
+        console.log('%cВчерашняя DEALDATE (сырая):', 'color:yellow', yesterdayDealRaw, '→ нормализованная:', yesterdayDeal);
 
         salesMap = {};
 
-        rows.forEach(row => {
+        let totalToday = 0, totalYesterday = 0;
+
+        rows.forEach((row, idx) => {
             if (row.length < 13) return;
+
             const flyDateRaw = row[7] || '';
             const reisRaw = row[12] || '';
             const dealDateRaw = row[5] || '';
 
             const date = normalizeDate(flyDateRaw);
             const flight = cleanFlight(reisRaw);
+            const dealNorm = normalizeDate(dealDateRaw);
+
             if (!date || !flight) return;
 
             const key = `${date}|${flight}`;
+
             if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
 
-            const dealNorm = normalizeDate(dealDateRaw);
-            if (dealNorm === todayDeal) salesMap[key].today++;
-            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
+            if (dealNorm === todayDeal) {
+                salesMap[key].today++;
+                totalToday++;
+            } else if (dealNorm === yesterdayDeal) {
+                salesMap[key].yesterday++;
+                totalYesterday++;
+            }
         });
 
-        alert('✅ Продажи загружены! (по DEALDATE)');
+        console.log('%c=== ИТОГОВАЯ ТАБЛИЦА ПРОДАЖ ===', 'color:lime;font-weight:bold');
+        console.log('salesMap:', salesMap);
+        console.log('Всего посчитано сегодня:', totalToday);
+        console.log('Всего посчитано вчера:', totalYesterday);
+
+        alert(`✅ Продажи загружены!\nСегодня: ${totalToday} билетов\nВчера: ${totalYesterday} билетов\nОткрой F12 → Console и скинь мне ВСЁ логи`);
         if (currentFlight) selectFlight(currentFlight);
     };
     reader.readAsText(file, 'windows-1251');
