@@ -68,13 +68,8 @@
     </div>
 
     <script>
-        // Инициализация Tailwind
-        function initTailwind() {
-            return { config(userConfig = {}) { return { configUser: userConfig, theme: { extend: {} } }; }, theme: { extend: {} } };
-        }
-
         const csvConfig = {
-            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← ОСТАВЛЕН ТВОЙ ОРИГИНАЛЬНЫЙ ФАЙЛ
+            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← ТВОЙ ОРИГИНАЛЬНЫЙ ФАЙЛ
             displayName: "RepRaidAvailSeg"
         };
 
@@ -97,7 +92,7 @@
                 if (!res.ok) throw new Error('Файл не найден');
                 let text = await res.text();
 
-                // Пропускаем первые 3 строки (метаданные)
+                // Пропускаем первые 3 строки — метаданные
                 let lines = text.split('\n');
                 lines = lines.slice(3);
                 const cleanCSV = lines.join('\n');
@@ -105,8 +100,7 @@
                 Papa.parse(cleanCSV, {
                     header: true,
                     skipEmptyLines: true,
-                    delimiter: ";",        // ← КРИТИЧНО ВАЖНО ДЛЯ ТВОЕГО CSV
-                    encoding: "UTF-8",
+                    // delimiter НЕ указываем — PapaParse САМ поймёт ; или ,
                     complete: (results) => {
                         allData = results.data;
                         processData();
@@ -122,7 +116,8 @@
             groupedData = {};
 
             allData.forEach(row => {
-                const rawFlight = row['Рейс'] || row['KV'] || '';
+                // Защита от разных вариантов заголовка рейса
+                const rawFlight = row['Рейс'] || row['рейс'] || row['KV'] || Object.values(row)[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 
                 if (!groupedData[flight]) groupedData[flight] = [];
@@ -182,10 +177,10 @@
                 <tbody>`;
 
             rows.forEach(row => {
-                const date     = row['Дата'] || '-';
-                const segment  = row['Сегмент'] || '-';
-                const route    = row['Маршрут'] || '-';
-                const totalAU  = parseInt(row['Total AU'] || row['TotalAU'] || 0);
+                const date     = (row['Дата'] || row['date'] || '-').trim();
+                const segment  = (row['Сегмент'] || row['segment'] || '-').trim();
+                const route    = (row['Маршрут'] || row['route'] || '-').trim();
+                const totalAU  = parseInt(row['Total AU'] || row['TotalAU'] || row['total au'] || 0);
                 const freeSeg  = parseInt(row['Free SegBkd'] || row['FreeSegBkd'] || 0);
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
@@ -217,17 +212,14 @@
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                delimiter: ";",
                 complete: (results) => {
                     allData = results.data;
-                    csvConfig.displayName = file.name;
                     processData();
                 }
             });
         }
 
         window.onload = () => {
-            initTailwind();
             loadCSV(csvConfig.path);
         };
     </script>
