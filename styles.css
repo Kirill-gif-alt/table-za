@@ -12,7 +12,14 @@
 
 table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
 th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+th { 
+    background: #012A4A; 
+    color: white; 
+    font-weight: 600; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+}
 td { color: #012A4A; font-weight: 500; }
 
 tr:hover { background: #f8fafc; }
