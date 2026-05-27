@@ -1,3 +1,4 @@
+// ====================== script.js ======================
 let allData = [];
 let salesMap = {};
 let closedFlights = new Set();
@@ -10,6 +11,7 @@ const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,
 
 function cleanFlight(str) {
     let f = String(str || '').trim().toUpperCase();
+    if (/^\d+$/.test(f)) f = 'KV-' + f;
     f = f.replace(/[^KV0-9-]/g, '');
     return f.substring(0, 6);
 }
@@ -23,6 +25,8 @@ function isNormalFlight(flight) {
 function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
 
+    if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
+    if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
     if (num === 261) return 'KV-161';
     if (num === 262) return 'KV-162';
     if (num === 253) return 'KV-153';
@@ -31,10 +35,6 @@ function getBaseFlight(flight) {
     if (num === 274) return 'KV-174';
     if (num === 325) return 'KV-225';
     if (num === 326) return 'KV-226';
-    if (num === 151) return 'KV-155';
-    if (num === 152) return 'KV-156';
-    if (num === 351) return 'KV-155';
-    if (num === 352) return 'KV-152';
 
     if (num >= 300 && num <= 399) return `KV-${num - 200}`;
     if (num >= 400 && num <= 499) return `KV-${num - 300}`;
@@ -120,10 +120,11 @@ function selectFlight(base) {
         const date = row[1] || '-';
         const totalAU = parseInt(row[5] || 0);
         const freeSeg = parseInt(row[6] || 0);
-        const key = `${date}|${cleanFlight(row[0])}`;
+        const originalFlight = cleanFlight(row[0]);
+        const key = `${date}|${originalFlight}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
         const isClosed = closedFlights.has(key);
-        const isExtra = !isNormalFlight(cleanFlight(row[0]));
+        const isExtra = !isNormalFlight(originalFlight);
         const isFlew = isPastDate(date);
 
         let statusHTML = '';
@@ -136,14 +137,18 @@ function selectFlight(base) {
             statusHTML = `<span class="flew-text">УЛЕТЕЛ</span>`;
             rowClass = 'flew-flight';
         } else {
-            const occupancy = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
-            const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
-            statusHTML = `<span class="${occClass}">${occupancy}%</span>`;
+            const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
+            const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
+            statusHTML = `<span class="${cls}">${occ}%</span>`;
             rowClass = isExtra ? 'extra-flight' : '';
         }
 
+        const flightDisplay = isExtra 
+            ? `${date} <span class="font-medium">${originalFlight}</span> <span class="extra-badge ml-1">(ДОП)</span>` 
+            : date;
+
         html += `<tr class="${rowClass}">
-            <td>${date} ${isExtra ? '<span class="extra-badge ml-2">(ДОП)</span>' : ''}</td>
+            <td>${flightDisplay}</td>
             <td class="text-right font-semibold">${totalAU}</td>
             <td class="text-right font-semibold">${freeSeg}</td>
             <td class="text-right font-semibold">${sales.today}</td>
@@ -157,12 +162,56 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ ======================
+function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+function handleSalesUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const lines = ev.target.result.split('\n').filter(l => l.trim());
+        if (lines.length < 2) return;
+
+        const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
+
+        const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
+        dealDates.sort((a, b) => parseDate(normalizeDate(b)) - parseDate(normalizeDate(a)));
+
+        const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
+        const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
+
+        salesMap = {};
+
+        rows.forEach(row => {
+            if (row.length < 13) return;
+            const flyDateRaw = row[7] || '';
+            const reisRaw = row[12] || '';
+            const dealDateRaw = row[5] || '';
+
+            const date = normalizeDate(flyDateRaw);
+            const flight = cleanFlight(reisRaw);
+            if (!date || !flight) return;
+
+            const key = `${date}|${flight}`;
+            if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
+
+            const dealNorm = normalizeDate(dealDateRaw);
+            if (dealNorm === todayDeal) salesMap[key].today++;
+            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
+        });
+
+        alert('✅ Продажи загружены! (сегодня/вчера по DEALDATE)');
+        if (currentFlight) selectFlight(currentFlight);
+    };
+    reader.readAsText(file, 'windows-1251');
+}
+
+// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-
     files.sort((a, b) => b.lastModified - a.lastModified);
     const latestTwo = files.slice(0, 2);
 
@@ -182,40 +231,10 @@ function handleAvailabilityUpload(e) {
     });
 }
 
-function triggerSalesUpload() { document.getElementById('salesInput').click(); }
-function handleSalesUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        let lines = ev.target.result.split('\n').filter(l => l.trim());
-        const rows = lines.map(l => l.split(',').map(f => f.trim()));
-        salesMap = {};
-        rows.forEach(row => {
-            if (row.length < 13) return;
-            const date = normalizeDate(row[7] || '');
-            const flight = cleanFlight(row[12] || '');
-            if (!date || !flight) return;
-            const key = `${date}|${flight}`;
-            if (!salesMap[key]) salesMap[key] = {today:0, yesterday:0};
-            const todayStr = normalizeDate(rows[1] ? rows[1][0] : '');
-            if (date === todayStr) salesMap[key].today++;
-            else if (rows[2] && date === normalizeDate(rows[2][0])) salesMap[key].yesterday++;
-        });
-        alert('✅ Продажи загружены!');
-        if (currentFlight) selectFlight(currentFlight);
-    };
-    reader.readAsText(file, 'windows-1251');
-}
-
-function triggerClosedUpload() { 
-    document.getElementById('closedInput').click(); 
-}
-
+function triggerClosedUpload() { document.getElementById('closedInput').click(); }
 function handleClosedUpload(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-
     let loaded = 0;
     files.forEach(file => {
         const reader = new FileReader();
@@ -240,12 +259,7 @@ function handleClosedUpload(e) {
 }
 
 function saveData() {
-    const data = {
-        allData: allData,
-        salesMap: salesMap,
-        closedFlights: Array.from(closedFlights),
-        timestamp: new Date().toISOString()
-    };
+    const data = { allData, salesMap, closedFlights: Array.from(closedFlights), timestamp: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -259,7 +273,6 @@ function refreshData() { location.reload(); }
 function showTab(n) {
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab' + n).classList.add('active');
-
     document.getElementById('tab-content-0').classList.add('hidden');
     document.getElementById('tab-content-1').classList.add('hidden');
     document.getElementById('tab-content-' + n).classList.remove('hidden');
@@ -278,6 +291,4 @@ async function loadSavedData() {
     } catch(e) {}
 }
 
-window.onload = () => {
-    loadSavedData();
-};
+window.onload = () => loadSavedData();
