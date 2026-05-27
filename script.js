@@ -161,79 +161,53 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ПРОДАЖ С ОТЛАДКОЙ ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ ======================
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 function handleSalesUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log('%c=== НАЧАЛО ЗАГРУЗКИ ПРОДАЖ ===', 'color:orange; font-weight:bold');
-
     const reader = new FileReader();
     reader.onload = ev => {
         const lines = ev.target.result.split('\n').filter(l => l.trim());
-        console.log('Всего строк в файле:', lines.length);
-
-        if (lines.length < 2) {
-            alert('Файл пустой или повреждён');
-            return;
-        }
+        if (lines.length < 2) return;
 
         const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
 
-        // Первые 3 строки для проверки
-        console.log('Первые 3 строки CSV:');
-        console.table(rows.slice(0, 3));
-
-        // Все уникальные DEALDATE
         const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
-        dealDates.sort((a, b) => parseDate(normalizeDate(b)) - parseDate(normalizeDate(a)));
+        // Сортируем численно (DDMMYYYY) — больший номер = новее
+        dealDates.sort((a, b) => parseInt(b) - parseInt(a));
 
-        console.log('Все найденные DEALDATE (от новых к старым):', dealDates);
         const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
         const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
-        console.log('Сегодняшняя DEALDATE:', todayDeal);
-        console.log('Вчерашняя DEALDATE:', yesterdayDeal);
 
         salesMap = {};
 
-        let todayCount = 0, yesterdayCount = 0;
-
-        rows.forEach((row, index) => {
+        rows.forEach(row => {
             if (row.length < 13) return;
-
             const flyDateRaw = row[7] || '';
             const reisRaw = row[12] || '';
             const dealDateRaw = row[5] || '';
 
             const date = normalizeDate(flyDateRaw);
             const flight = cleanFlight(reisRaw);
-            const dealNorm = normalizeDate(dealDateRaw);
-
             if (!date || !flight) return;
 
             const key = `${date}|${flight}`;
             if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
 
-            if (dealNorm === todayDeal) {
-                salesMap[key].today++;
-                todayCount++;
-            } else if (dealNorm === yesterdayDeal) {
-                salesMap[key].yesterday++;
-                yesterdayCount++;
-            }
+            const dealNorm = normalizeDate(dealDateRaw);
+            if (dealNorm === todayDeal) salesMap[key].today++;
+            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
         });
 
-        console.log('ИТОГО добавлено продаж: сегодня =', todayCount, 'вчера =', yesterdayCount);
-        console.log('salesMap:', salesMap);
-
-        alert(`✅ Продажи загружены!\nСегодня: ${todayCount} билетов\nВчера: ${yesterdayCount} билетов\nОткрой F12 → Console и скинь логи`);
+        alert('✅ Продажи загружены! (по DEALDATE)');
         if (currentFlight) selectFlight(currentFlight);
     };
     reader.readAsText(file, 'windows-1251');
 }
 
-// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ======================
+// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
     const files = Array.from(e.target.files);
