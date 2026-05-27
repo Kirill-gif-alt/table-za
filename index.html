@@ -28,23 +28,19 @@
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
 
     <div class="max-w-screen-2xl mx-auto flex h-screen">
-        <!-- Боковая панель -->
         <div class="w-72 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col">
             <div class="p-6 border-b flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
                 <h1 class="header-font text-3xl">КРАСАВИА</h1>
             </div>
-            
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
-            
             <div class="p-6 border-t">
                 <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV</button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
             </div>
         </div>
 
-        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
             <div class="krasavia-header px-8 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-3xl font-semibold"></div>
@@ -65,9 +61,7 @@
     </div>
 
     <script>
-        const csvConfig = {
-            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv"
-        };
+        const csvConfig = { path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv" };
 
         let allData = [];
         let groupedData = {};
@@ -79,30 +73,36 @@
             return f.substring(0, 6);
         }
 
+        // Парсинг даты DD.MM.YYYY → объект Date
+        function parseDate(dateStr) {
+            if (!dateStr) return new Date(0);
+            const [day, month, year] = dateStr.split('.').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
         async function loadCSV(filePath) {
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('table-container').classList.add('hidden');
 
             try {
                 const res = await fetch(filePath);
-                if (!res.ok) throw new Error('Файл не найден');
-
-                // НОВЫЙ ПОДХОД: байты + правильная кодировка Windows-1251
                 const buffer = await res.arrayBuffer();
-                const decoder = new TextDecoder('windows-1251');
+                const decoder = new TextDecoder('windows-1251'); // ← ЭТО ГЛАВНЫЙ ФИКС
                 let text = decoder.decode(buffer);
 
-                // Пропускаем первые 3 строки (метаданные)
-                let lines = text.split('\n').slice(3);
-                
+                let lines = text.split('\n').slice(3); // пропускаем 3 строки метаданных
+
                 allData = lines
                     .filter(line => line.trim() !== '')
                     .map(line => line.split(';').map(field => field.trim()));
 
+                console.log('%c=== RAW PARSED DATA (первые 5 строк) ===', 'color: lime; font-weight: bold');
+                console.table(allData.slice(0, 5));
+
                 processData();
             } catch (err) {
                 console.error(err);
-                alert('Ошибка загрузки CSV: ' + err.message);
+                alert('Ошибка: ' + err.message);
                 document.getElementById('loading-screen').classList.add('hidden');
             }
         }
@@ -111,7 +111,7 @@
             groupedData = {};
 
             allData.forEach(row => {
-                if (row.length < 7) return;
+                if (row.length < 5) return;
                 const rawFlight = row[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
 
@@ -152,10 +152,16 @@
             currentFlight = flight;
             renderFlightList();
 
-            const rows = groupedData[flight] || [];
+            let rows = groupedData[flight] || [];
+
+            // СОРТИРОВКА ПО ДАТЕ (старые сверху)
+            rows.sort((a, b) => parseDate(a[1]) - parseDate(b[1]));
 
             document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${flight}</span>`;
             document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
+
+            console.log(`%c=== ДАННЫЕ ДЛЯ РЕЙСА ${flight} (первые 3 строки после сортировки) ===`, 'color: orange; font-weight: bold');
+            console.table(rows.slice(0, 3));
 
             let html = `
             <table class="w-full">
@@ -206,11 +212,9 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(ev) {
-                const text = ev.target.result;
+                let text = ev.target.result;
                 let lines = text.split('\n').slice(3);
-                allData = lines
-                    .filter(line => line.trim() !== '')
-                    .map(line => line.split(';').map(field => field.trim()));
+                allData = lines.filter(line => line.trim() !== '').map(line => line.split(';').map(f => f.trim()));
                 processData();
             };
             reader.readAsText(file, 'windows-1251');
