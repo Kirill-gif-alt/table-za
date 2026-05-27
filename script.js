@@ -1,13 +1,11 @@
-// ====================== script.js ======================
 let allData = [];
 let salesMap = {};
-let closedFlights = new Set();   // ключ: "дата|рейс"
+let closedFlights = new Set();
 let groupedData = {};
 let currentFlight = null;
 
 const DATA_FILE = "./krasavia-data.json";
 
-// Обычные рейсы
 const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
 function cleanFlight(str) {
@@ -22,11 +20,9 @@ function isNormalFlight(flight) {
     return NORMAL_FLIGHTS.has(num);
 }
 
-// Группировка доп.рейсов
 function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
 
-    // Специальные случаи
     if (num === 261) return 'KV-161';
     if (num === 262) return 'KV-162';
     if (num === 253) return 'KV-153';
@@ -35,14 +31,11 @@ function getBaseFlight(flight) {
     if (num === 274) return 'KV-174';
     if (num === 325) return 'KV-225';
     if (num === 326) return 'KV-226';
-
-    // Новые по твоему запросу
     if (num === 151) return 'KV-155';
     if (num === 152) return 'KV-156';
     if (num === 351) return 'KV-155';
     if (num === 352) return 'KV-152';
 
-    // Стандартные 3xx и 4xx
     if (num >= 300 && num <= 399) return `KV-${num - 200}`;
     if (num >= 400 && num <= 499) return `KV-${num - 300}`;
 
@@ -199,7 +192,6 @@ function handleSalesUpload(e) {
     reader.readAsText(file, 'windows-1251');
 }
 
-// ←←← ИСПРАВЛЕНО: теперь можно выбирать несколько файлов закрытых рейсов
 function triggerClosedUpload() { 
     document.getElementById('closedInput').click(); 
 }
@@ -243,10 +235,20 @@ function saveData() {
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('✅ Все данные сохранены в krasavia-data.json\n\nЗалей его в репозиторий.');
+    alert('✅ Все данные (доступность + продажи + закрытые рейсы) сохранены в krasavia-data.json');
 }
 
 function refreshData() { location.reload(); }
+
+// ====================== ВКЛАДКИ ======================
+function showTab(n) {
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab' + n).classList.add('active');
+
+    document.getElementById('tab-content-0').classList.add('hidden');
+    document.getElementById('tab-content-1').classList.add('hidden');
+    document.getElementById('tab-content-' + n).classList.remove('hidden');
+}
 
 window.onload = () => {
     loadSavedData();
