@@ -11,8 +11,8 @@
 
 .flight-card { 
     background: white; 
-    border-radius: 24px; 
-    box-shadow: 0 20px 40px -15px rgb(1 42 74 / 0.2); 
+    border-radius: 20px; 
+    box-shadow: 0 15px 30px -10px rgb(1 42 74 / 0.15); 
     overflow: hidden;
 }
 
@@ -22,49 +22,41 @@ table {
     width: 100%; 
     font-size: 15px; 
     min-width: 820px;
-    table-layout: fixed;
 }
 
-/* НАДЁЖНАЯ ФИКСАЦИЯ ШАПКИ */
+/* ЖЁСТКАЯ ФИКСАЦИЯ ШАПКИ */
 th { 
     background: #012A4A; 
     color: white; 
     font-weight: 700; 
     position: sticky; 
     top: 0; 
-    z-index: 60; 
-    padding: 18px 18px;
+    z-index: 100; 
+    padding: 16px 18px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    font-size: 15px;
 }
 
-/* СТРОКА СУММ — ТОЖЕ ФИКСИРОВАНА */
 .summary-row th {
     background: #012A4A !important;
     color: white !important;
     position: sticky; 
-    top: 53px; 
-    z-index: 55;
+    top: 51px; 
+    z-index: 90;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 td { 
-    padding: 15px 18px; 
+    padding: 14px 18px; 
     border-bottom: 1px solid #f1f5f9; 
     color: #012A4A;
-    font-size: 15px;
-    text-align: left;
 }
 
-/* ЧЕРЕДОВАНИЕ ПО НЕДЕЛЯМ */
+tr:hover { background: #f0f9ff !important; }
 tr.week-even { background: #e0f2ff !important; }
 tr.week-odd  { background: #ffffff !important; }
-
-tr:hover { background: #f0f9ff !important; transform: scale(1.01); }
 tr.extra-flight { background: #f3e8ff !important; }
 tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b7280; }
 
-/* Подсветка выбранного рейса */
 .flight-item.active {
     background: #e0f2ff !important;
     color: #012A4A;
@@ -82,5 +74,3 @@ tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b728
     border-radius: 9999px; 
     font-size: 13px;
 }
-
-.flight-item:hover { background: #f1f5f9; }
