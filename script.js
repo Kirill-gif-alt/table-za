@@ -1,4 +1,3 @@
-// ====================== script.js ======================
 let allData = [];
 let salesMap = {};
 let closedFlights = new Set();
@@ -25,7 +24,6 @@ function isNormalFlight(flight) {
 function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
 
-    // Новые доп.рейсы по твоему запросу
     if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
     if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
     if (num === 261) return 'KV-161';
@@ -125,7 +123,7 @@ function selectFlight(base) {
         const key = `${date}|${originalFlight}`;
         const sales = salesMap[key] || {today:0, yesterday:0};
         const isClosed = closedFlights.has(key);
-        const isExtra = !isNormalFlight(originalFlight);
+        const isExtra = originalFlight !== base;   // ← главное исправление
         const isFlew = isPastDate(date);
 
         let statusHTML = '';
@@ -176,7 +174,6 @@ function handleSalesUpload(e) {
 
         const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
 
-        // Собираем все уникальные DEALDATE и сортируем от новой к старой
         const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
         dealDates.sort((a, b) => parseDate(normalizeDate(b)) - parseDate(normalizeDate(a)));
 
@@ -203,7 +200,7 @@ function handleSalesUpload(e) {
             else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
         });
 
-        alert('✅ Продажи загружены!\nСегодня и вчера посчитаны по DEALDATE');
+        alert('✅ Продажи загружены! (сегодня/вчера по DEALDATE)');
         if (currentFlight) selectFlight(currentFlight);
     };
     reader.readAsText(file, 'windows-1251');
