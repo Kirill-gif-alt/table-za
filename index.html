@@ -29,24 +29,19 @@
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
 
     <div class="max-w-screen-2xl mx-auto flex h-screen">
-        <!-- Боковая панель -->
         <div class="w-72 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col">
             <div class="p-6 border-b flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
                 <h1 class="header-font text-3xl">КРАСАВИА</h1>
             </div>
-            
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
-            
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
-            
             <div class="p-6 border-t">
                 <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV</button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
             </div>
         </div>
 
-        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
             <div class="krasavia-header px-8 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-3xl font-semibold"></div>
@@ -61,7 +56,6 @@
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
                     <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
                 </div>
-
                 <div id="table-container" class="flight-card p-6 hidden"></div>
             </div>
         </div>
@@ -69,8 +63,7 @@
 
     <script>
         const csvConfig = {
-            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← ТВОЙ ОРИГИНАЛЬНЫЙ ФАЙЛ
-            displayName: "RepRaidAvailSeg"
+            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv"
         };
 
         let allData = [];
@@ -92,22 +85,21 @@
                 if (!res.ok) throw new Error('Файл не найден');
                 let text = await res.text();
 
-                // Пропускаем первые 3 строки — метаданные
                 let lines = text.split('\n');
-                lines = lines.slice(3);
+                lines = lines.slice(3);                    // пропускаем 3 строки метаданных
                 const cleanCSV = lines.join('\n');
 
                 Papa.parse(cleanCSV, {
-                    header: true,
+                    header: false,           // ← ВАЖНО: false, потому что заголовки кривые
                     skipEmptyLines: true,
-                    // delimiter НЕ указываем — PapaParse САМ поймёт ; или ,
+                    delimiter: ";",          // ← ТВОЙ разделитель
                     complete: (results) => {
                         allData = results.data;
                         processData();
                     }
                 });
             } catch (err) {
-                alert('Ошибка загрузки CSV: ' + err.message);
+                alert('Ошибка загрузки: ' + err.message);
                 document.getElementById('loading-screen').classList.add('hidden');
             }
         }
@@ -116,10 +108,10 @@
             groupedData = {};
 
             allData.forEach(row => {
-                // Защита от разных вариантов заголовка рейса
-                const rawFlight = row['Рейс'] || row['рейс'] || row['KV'] || Object.values(row)[0] || '';
+                if (row.length < 7) return;
+                const rawFlight = row[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
-                
+
                 if (!groupedData[flight]) groupedData[flight] = [];
                 groupedData[flight].push(row);
             });
@@ -177,11 +169,11 @@
                 <tbody>`;
 
             rows.forEach(row => {
-                const date     = (row['Дата'] || row['date'] || '-').trim();
-                const segment  = (row['Сегмент'] || row['segment'] || '-').trim();
-                const route    = (row['Маршрут'] || row['route'] || '-').trim();
-                const totalAU  = parseInt(row['Total AU'] || row['TotalAU'] || row['total au'] || 0);
-                const freeSeg  = parseInt(row['Free SegBkd'] || row['FreeSegBkd'] || 0);
+                const date     = row[1] || '-';
+                const segment  = row[2] || '-';
+                const route    = row[3] || '-';
+                const totalAU  = parseInt(row[5] || 0);
+                const freeSeg  = parseInt(row[6] || 0);
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
                 const occClass = occupancy >= 75 ? 'occupancy-high' : 
@@ -210,8 +202,9 @@
             const file = e.target.files[0];
             if (!file) return;
             Papa.parse(file, {
-                header: true,
+                header: false,
                 skipEmptyLines: true,
+                delimiter: ";",
                 complete: (results) => {
                     allData = results.data;
                     processData();
@@ -219,9 +212,7 @@
             });
         }
 
-        window.onload = () => {
-            loadCSV(csvConfig.path);
-        };
+        window.onload = () => loadCSV(csvConfig.path);
     </script>
 </body>
 </html>
