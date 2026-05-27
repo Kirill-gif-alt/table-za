@@ -1,521 +1,227 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>КРАСАВИА • Авиа-таблицы</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#011B2E;
-color:white;
-}
-
-.wrapper{
-display:flex;
-height:100vh;
-}
-
-.sidebar{
-width:320px;
-background:white;
-color:#012A4A;
-display:flex;
-flex-direction:column;
-}
-
-.logo{
-padding:24px;
-font-size:28px;
-font-weight:700;
-border-bottom:1px solid #ddd;
-}
-
-.flight-list{
-flex:1;
-overflow:auto;
-padding:10px;
-}
-
-.flight{
-padding:16px;
-margin-bottom:8px;
-border-radius:16px;
-cursor:pointer;
-display:flex;
-justify-content:space-between;
-}
-
-.flight:hover{
-background:#f3f4f6;
-}
-
-.active{
-background:#0474BC;
-color:white;
-}
-
-.main{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-.header{
-background:#045CA4;
-padding:20px 30px;
-display:flex;
-justify-content:space-between;
-}
-
-.content{
-padding:20px;
-overflow:auto;
-}
-
-.card{
-background:white;
-color:black;
-border-radius:20px;
-padding:20px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-}
-
-th{
-background:#012A4A;
-color:white;
-padding:12px;
-}
-
-td{
-padding:10px;
-border-bottom:1px solid #ddd;
-}
-
-.high{
-color:#10b981;
-font-weight:bold;
-}
-
-.med{
-color:#f59e0b;
-font-weight:bold;
-}
-
-.low{
-color:#ef4444;
-font-weight:bold;
-}
-
-button{
-cursor:pointer;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>КРАСАВИА • Авиа-таблицы</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500&display=swap');
+        :root { --primary: #0474BC; }
+        * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
+        .header-font { font-family: 'Space Grotesk', sans-serif; }
+        .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
+        .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background: #f8fafc; }
+        .occupancy-high { color: #10b981; font-weight: 700; }
+        .occupancy-med  { color: #f59e0b; font-weight: 700; }
+        .occupancy-low  { color: #ef4444; font-weight: 700; }
+        .flight-item { transition: all 0.2s; }
+        .flight-item:hover { background: #f1f5f9; }
+        .flight-item.active { background: #0474BC; color: white; }
+    </style>
 </head>
-
-<body>
-
-<div class="wrapper">
-
-<div class="sidebar">
-
-<div class="logo">
-✈ КРАСАВИА
-</div>
-
-<div class="flight-list" id="flightList"></div>
-
-<div style="padding:20px">
-
-<button
-onclick="document.getElementById('fileInput').click()"
-style="
-width:100%;
-padding:14px;
-border:none;
-background:#0474BC;
-color:white;
-border-radius:20px">
-
-Загрузить CSV
-
-</button>
-
-<input
-type="file"
-accept=".csv"
-hidden
-id="fileInput">
-
-</div>
-
-</div>
-
-<div class="main">
-
-<div class="header">
-
-<div id="title">
-Загрузка...
-</div>
-
-<button
-onclick="loadCSV(csvPath)"
-style="
-padding:10px 20px;
-border:none;
-background:white;
-color:#045CA4;
-border-radius:20px">
-
-Обновить
-
-</button>
-
-</div>
-
-<div class="content">
-
-<div id="tableContainer"></div>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-const csvPath = "./RepRaidAvailSeg_26.05.2026_17.14.50.csv";
-
-let data=[];
-let grouped={};
-
-async function loadCSV(path){
-
-try{
-
-const response=
-await fetch(path);
-
-if(!response.ok)
-throw new Error(
-"CSV не найден"
-);
-
-const text=
-await response.text();
-
-parseCSV(text);
-
-}
-catch(err){
-
-alert(err.message);
-
-}
-
-}
-
-function parseCSV(csv){
-
-let rows=
-csv.split(/\r?\n/);
-
-rows=
-rows.slice(3);
-
-csv=
-rows.join("\n");
-
-Papa.parse(csv,{
-
-header:true,
-
-skipEmptyLines:true,
-
-complete:(res)=>{
-
-data=
-res.data;
-
-group();
-
-}
-
-});
-
-}
-
-function group(){
-
-grouped={};
-
-data.forEach(r=>{
-
-const flight=
-String(
-r["Рейс"]||""
-)
-.trim();
-
-if(!flight)
-return;
-
-if(!grouped[flight])
-grouped[flight]=[];
-
-grouped[flight]
-.push(r);
-
-});
-
-renderFlights();
-
-}
-
-function renderFlights(){
-
-const panel=
-document
-.getElementById(
-"flightList"
-);
-
-panel.innerHTML="";
-
-Object
-.keys(grouped)
-.sort()
-.forEach(f=>{
-
-const el=
-document
-.createElement(
-"div"
-);
-
-el.className=
-"flight";
-
-el.innerHTML=
-`
-<span>${f}</span>
-<span>
-${grouped[f].length}
-</span>
-`;
-
-el.onclick=
-()=>show(f);
-
-panel
-.appendChild(
-el);
-
-});
-
-if(
-Object.keys(grouped)
-.length
-){
-
-show(
-Object.keys(grouped)[0]
-);
-
-}
-
-}
-
-function show(flight){
-
-document
-.getElementById(
-"title"
-)
-innerHTML=
-"Рейс "+flight;
-
-const rows=
-grouped[flight];
-
-let html=
-`
-<div class="card">
-
-<table>
-
-<tr>
-
-<th>Дата</th>
-
-<th>Сегмент</th>
-
-<th>Маршрут</th>
-
-<th>Total AU</th>
-
-<th>Free</th>
-
-<th>Загрузка</th>
-
-</tr>
-`;
-
-rows.forEach(r=>{
-
-const total=
-Number(
-r["Total AU"]||0
-);
-
-const free=
-Number(
-r["Free SegBkd"]||0
-);
-
-const occ=
-total
-?
-Math.round(
-(
-(total-free)
-/
-total
-)
-*
-100
-)
-:
-0;
-
-let cls="low";
-
-if(occ>=75)
-cls="high";
-
-else if(
-occ>=45
-)
-cls="med";
-
-html+=`
-
-<tr>
-
-<td>
-${r["Дата"]||"-"}
-</td>
-
-<td>
-${r["Сегмент"]||"-"}
-</td>
-
-<td>
-${r["Маршрут"]||"-"}
-</td>
-
-<td>
-${total}
-</td>
-
-<td>
-${free}
-</td>
-
-<td class="${cls}">
-${occ}%
-</td>
-
-</tr>
-
-`;
-
-});
-
-html+=`
-</table>
-
-</div>
-`;
-
-document
-.getElementById(
-"tableContainer"
-)
-.innerHTML=
-html;
-
-}
-
-document
-.getElementById(
-"fileInput"
-)
-.addEventListener(
-"change",
-e=>{
-
-const file=
-e.target.files[0];
-
-if(!file)
-return;
-
-Papa.parse(file,{
-
-header:true,
-
-skipEmptyLines:true,
-
-beforeFirstChunk:
-chunk=>{
-
-let rows=
-chunk
-.split(/\r?\n/);
-
-return rows
-.slice(3)
-.join("\n");
-
-},
-
-complete:
-res=>{
-
-data=
-res.data;
-
-group();
-
-}
-
-});
-
-}
-
-);
-
-loadCSV(csvPath);
-
-</script>
-
+<body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
+
+    <div class="max-w-screen-2xl mx-auto flex h-screen">
+        <!-- Боковая панель -->
+        <div class="w-72 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col">
+            <div class="p-6 border-b flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
+                <h1 class="header-font text-3xl">КРАСАВИА</h1>
+            </div>
+            
+            <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
+            
+            <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
+            
+            <div class="p-6 border-t">
+                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV</button>
+                <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
+            </div>
+        </div>
+
+        <!-- Основная часть -->
+        <div class="flex-1 flex flex-col">
+            <div class="krasavia-header px-8 py-5 flex items-center justify-between">
+                <div id="selected-flight-title" class="text-3xl font-semibold"></div>
+                <div class="flex items-center gap-x-8">
+                    <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
+                    <div id="info-text" class="text-white/80 text-sm"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 p-8 overflow-auto">
+                <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
+                    <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
+                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
+                </div>
+
+                <div id="table-container" class="flight-card p-6 hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csvConfig = {
+            path: "./RepRaidAvailSeg_26.05.2026_17.14.50.csv",   // ← ТВОЙ ОРИГИНАЛЬНЫЙ ФАЙЛ
+            displayName: "RepRaidAvailSeg"
+        };
+
+        let allData = [];
+        let groupedData = {};
+        let currentFlight = null;
+
+        function cleanFlight(str) {
+            let f = String(str || '').trim().toUpperCase();
+            f = f.replace(/[^KV0-9-]/g, '');
+            return f.substring(0, 6);
+        }
+
+        async function loadCSV(filePath) {
+            document.getElementById('loading-screen').classList.remove('hidden');
+            document.getElementById('table-container').classList.add('hidden');
+
+            try {
+                const res = await fetch(filePath);
+                if (!res.ok) throw new Error('Файл не найден');
+                let text = await res.text();
+
+                // Пропускаем первые 3 строки — метаданные
+                let lines = text.split('\n');
+                lines = lines.slice(3);
+                const cleanCSV = lines.join('\n');
+
+                Papa.parse(cleanCSV, {
+                    header: true,
+                    skipEmptyLines: true,
+                    // delimiter НЕ указываем — PapaParse САМ поймёт ; или ,
+                    complete: (results) => {
+                        allData = results.data;
+                        processData();
+                    }
+                });
+            } catch (err) {
+                alert('Ошибка загрузки CSV: ' + err.message);
+                document.getElementById('loading-screen').classList.add('hidden');
+            }
+        }
+
+        function processData() {
+            groupedData = {};
+
+            allData.forEach(row => {
+                // Защита от разных вариантов заголовка рейса
+                const rawFlight = row['Рейс'] || row['рейс'] || row['KV'] || Object.values(row)[0] || '';
+                const flight = cleanFlight(rawFlight) || 'Неизвестный';
+                
+                if (!groupedData[flight]) groupedData[flight] = [];
+                groupedData[flight].push(row);
+            });
+
+            renderFlightList();
+            document.getElementById('loading-screen').classList.add('hidden');
+
+            if (Object.keys(groupedData).length > 0) {
+                const first = Object.keys(groupedData).sort()[0];
+                selectFlight(first);
+            }
+        }
+
+        function renderFlightList() {
+            const container = document.getElementById('flight-list');
+            container.innerHTML = '';
+
+            Object.keys(groupedData).sort().forEach(flight => {
+                const count = groupedData[flight].length;
+                const div = document.createElement('div');
+                div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === flight ? 'active' : ''}`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-3">
+                        <span class="text-xl">✈️</span>
+                        <span class="font-semibold">Рейс ${flight}</span>
+                    </div>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
+                `;
+                div.onclick = () => selectFlight(flight);
+                container.appendChild(div);
+            });
+        }
+
+        function selectFlight(flight) {
+            currentFlight = flight;
+            renderFlightList();
+
+            const rows = groupedData[flight] || [];
+
+            document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${flight}</span>`;
+            document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
+
+            let html = `
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Сегмент</th>
+                        <th>Маршрут</th>
+                        <th class="text-right">Total AU</th>
+                        <th class="text-right">Free SegBkd</th>
+                        <th class="text-right">Загрузка</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            rows.forEach(row => {
+                const date     = (row['Дата'] || row['date'] || '-').trim();
+                const segment  = (row['Сегмент'] || row['segment'] || '-').trim();
+                const route    = (row['Маршрут'] || row['route'] || '-').trim();
+                const totalAU  = parseInt(row['Total AU'] || row['TotalAU'] || row['total au'] || 0);
+                const freeSeg  = parseInt(row['Free SegBkd'] || row['FreeSegBkd'] || 0);
+                const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
+
+                const occClass = occupancy >= 75 ? 'occupancy-high' : 
+                               (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
+
+                html += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${segment}</td>
+                        <td>${route}</td>
+                        <td class="text-right font-semibold">${totalAU || '-'}</td>
+                        <td class="text-right font-semibold">${freeSeg || '-'}</td>
+                        <td class="text-right font-bold ${occClass}">${occupancy}%</td>
+                    </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('table-container').innerHTML = html;
+            document.getElementById('table-container').classList.remove('hidden');
+        }
+
+        function refreshData() { loadCSV(csvConfig.path); }
+        function triggerFileUpload() { document.getElementById('fileInput').click(); }
+
+        function handleManualUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => {
+                    allData = results.data;
+                    processData();
+                }
+            });
+        }
+
+        window.onload = () => {
+            loadCSV(csvConfig.path);
+        };
+    </script>
 </body>
-
 </html>
