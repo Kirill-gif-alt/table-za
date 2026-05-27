@@ -19,23 +19,23 @@
         <div id="tab-content-0" class="flex flex-1 overflow-hidden">
             <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
                 <div class="p-6 border-b flex items-center gap-x-3">
-                    <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">Airplane</div>
-                    <h1 class="header-font text-3xl">КРАСАВИА</h1>
+                    <div class="w-9 h-9 bg-[#012A4A] text-white rounded-2xl flex items-center justify-center text-2xl font-bold">К</div>
+                    <h1 class="header-font text-3xl tracking-tighter">КРАСАВИА</h1>
                 </div>
                 <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
                 <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
 
                 <div class="p-6 border-t space-y-4">
-                    <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium">Добавить доступность</button>
+                    <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#012A4A] hover:bg-[#011F38] text-white py-3.5 rounded-3xl font-medium">Добавить доступность</button>
                     <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium">Добавить продажи</button>
-                    <button onclick="triggerClosedUpload()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3.5 rounded-3xl font-medium">Добавить закрытые рейсы</button>
+                    <button onclick="triggerClosedUpload()" class="w-full bg-gray-700 hover:bg-gray-800 text-white py-3.5 rounded-3xl font-medium">Добавить закрытые рейсы</button>
                     <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-3xl font-medium">Сохранить данные</button>
                 </div>
             </div>
 
             <div class="flex-1 flex flex-col">
                 <div class="krasavia-header px-6 py-5 flex items-center justify-between">
-                    <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
+                    <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold text-white"></div>
                     <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
                 </div>
 
