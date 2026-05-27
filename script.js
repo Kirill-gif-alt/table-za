@@ -8,6 +8,8 @@ const DATA_FILE = "./krasavia-data.json";
 
 const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
+const DAYS_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
 function cleanFlight(str) {
     let f = String(str || '').trim().toUpperCase().replace(/[^0-9]/g, '');
     if (f) f = 'KV-' + f;
@@ -91,7 +93,6 @@ function handleSalesUpload(e) {
         });
 
         console.log(`%c✅ ЗАГРУЖЕНО ПРОДАЖ: ${salesCount}`, 'color:lime;font-size:18px');
-        console.table(salesMap);
 
         alert(`✅ Продажи загружены!\nСегодня: ${Object.values(salesMap).reduce((a,b)=>a+b.today,0)}\nВчера: ${Object.values(salesMap).reduce((a,b)=>a+b.yesterday,0)}`);
 
@@ -155,6 +156,11 @@ function getWeekNumber(d) {
     return weekNo;
 }
 
+function getDayOfWeek(dateStr) {
+    const date = new Date(dateStr.split('.').reverse().join('-'));
+    return DAYS_RU[date.getDay()];
+}
+
 function selectFlight(base) {
     currentFlight = base;
     renderFlightList();
@@ -180,6 +186,7 @@ function selectFlight(base) {
     <thead>
         <tr>
             <th>Дата</th>
+            <th>День недели</th>
             <th class="text-right">ПКЗ</th>
             <th class="text-right">Загрузка</th>
             <th class="text-right">Продажи сегодня</th>
@@ -187,6 +194,7 @@ function selectFlight(base) {
             <th class="text-right">ЗПК</th>
         </tr>
         <tr class="summary-row">
+            <th></th>
             <th></th>
             <th class="text-right"></th>
             <th class="text-right"></th>
@@ -238,8 +246,11 @@ function selectFlight(base) {
             ? `${date} <span class="font-semibold">${originalFlight}</span> <span class="extra-badge ml-1">(ДОП)</span>` 
             : date;
 
+        const dayCell = getDayOfWeek(date);
+
         html += `<tr class="${rowClass}">
             <td>${dateCell}</td>
+            <td class="font-medium">${dayCell}</td>
             <td class="text-right font-semibold">${totalAU}</td>
             <td class="text-right font-semibold">${freeSeg}</td>
             <td class="text-right font-semibold">${sales.today}</td>
@@ -309,13 +320,6 @@ function saveData() {
 }
 
 function refreshData() { location.reload(); }
-
-function showTab(n) {
-    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab'+n).classList.add('active');
-    document.getElementById('tab-content-0').classList.toggle('hidden', n!==0);
-    document.getElementById('tab-content-1').classList.toggle('hidden', n!==1);
-}
 
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 
