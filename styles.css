@@ -7,8 +7,6 @@
 .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
 .header-font { font-family: 'Space Grotesk', sans-serif; }
 
-.krasavia-header { background: linear-gradient(90deg, #012A4A, #011F38); }
-
 .flight-card { 
     background: white; 
     border-radius: 20px; 
@@ -21,7 +19,7 @@ table {
     border-spacing: 0; 
     width: 100%; 
     font-size: 15px; 
-    min-width: 820px;
+    min-width: 900px;
 }
 
 /* ЖЁСТКАЯ ФИКСАЦИЯ ШАПКИ */
@@ -32,8 +30,9 @@ th {
     position: sticky; 
     top: 0; 
     z-index: 100; 
-    padding: 16px 18px;
+    padding: 16px 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    text-align: center;
 }
 
 .summary-row th {
@@ -42,13 +41,15 @@ th {
     position: sticky; 
     top: 51px; 
     z-index: 90;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    text-align: center;
 }
 
+/* ВСЁ ПО ЦЕНТРУ */
 td { 
-    padding: 14px 18px; 
+    padding: 14px 12px; 
     border-bottom: 1px solid #f1f5f9; 
     color: #012A4A;
+    text-align: center;
 }
 
 tr:hover { background: #f0f9ff !important; }
@@ -56,12 +57,6 @@ tr.week-even { background: #e0f2ff !important; }
 tr.week-odd  { background: #ffffff !important; }
 tr.extra-flight { background: #f3e8ff !important; }
 tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b7280; }
-
-.flight-item.active {
-    background: #e0f2ff !important;
-    color: #012A4A;
-    box-shadow: 0 0 0 3px rgba(0, 183, 255, 0.3);
-}
 
 .occupancy-high { color: #22C55E; font-weight: 700; }
 .occupancy-med  { color: #F59E0B; font-weight: 700; }
