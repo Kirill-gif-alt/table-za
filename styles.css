@@ -32,6 +32,14 @@ tr.closed-flight { background: #e5e7eb !important; }
 
 .path-box { background: #f1f5f9; border: 3px dashed #0474BC; border-radius: 20px; }
 
+.tab-button {
+    border-bottom: 3px solid transparent;
+}
+.tab-button.active {
+    border-bottom: 3px solid #0474BC;
+    color: #0474BC;
+}
+
 @media (max-width: 768px) {
     table { font-size: 13px; min-width: 100%; }
     th, td { padding: 10px 8px; }
