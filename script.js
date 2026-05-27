@@ -5,7 +5,7 @@ let currentFlight = null;
 
 const DATA_FILE = "./krasavia-data.json";
 
-// Загрузка сохранённых данных
+// Автозагрузка сохранённых данных
 async function loadSavedData() {
     try {
         const res = await fetch(DATA_FILE + '?t=' + Date.now());
@@ -28,7 +28,6 @@ function saveData() {
     alert('✅ Файл krasavia-data.json скачан!\nЗалей его в репозиторий.');
 }
 
-// Основные функции
 function cleanFlight(str) {
     let f = String(str || '').trim().toUpperCase();
     f = f.replace(/[^KV0-9-]/g, '');
@@ -73,7 +72,7 @@ function renderFlightList() {
     const container = document.getElementById('flight-list');
     const mobileContainer = document.getElementById('mobile-flight-list');
     container.innerHTML = '';
-    mobileContainer.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
 
     Object.keys(groupedData).sort().forEach(base => {
         const count = groupedData[base].length;
@@ -92,12 +91,14 @@ function renderFlightList() {
         div.onclick = () => selectFlight(base);
         container.appendChild(div);
 
-        // Для телефона (мобильный скролл)
-        const mobileDiv = document.createElement('div');
-        mobileDiv.className = `px-4 py-2 bg-white border rounded-2xl cursor-pointer text-sm whitespace-nowrap ${currentFlight === base ? 'bg-[#0474BC] text-white' : ''}`;
-        mobileDiv.innerHTML = `Рейс ${base} ${isExtra ? '(ДОП)' : ''}`;
-        mobileDiv.onclick = () => selectFlight(base);
-        mobileContainer.appendChild(mobileDiv);
+        // Для телефона
+        if (mobileContainer) {
+            const mdiv = document.createElement('div');
+            mdiv.className = `px-4 py-2 bg-white border rounded-2xl cursor-pointer text-sm whitespace-nowrap ${currentFlight === base ? 'bg-[#0474BC] text-white' : ''}`;
+            mdiv.innerHTML = `Рейс ${base} ${isExtra ? '(ДОП)' : ''}`;
+            mdiv.onclick = () => selectFlight(base);
+            mobileContainer.appendChild(mdiv);
+        }
     });
 }
 
