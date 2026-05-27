@@ -1,81 +1,301 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>КРАСАВИА • Авиа-таблицы</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body class="tailwind-ready">
+// ====================== script.js ======================
+let allData = [];
+let salesMap = {};
+let closedFlights = new Set();
+let groupedData = {};
+let currentFlight = null;
 
-    <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
+const DATA_FILE = "./krasavia-data.json";
 
-        <!-- Вкладки -->
-        <div class="bg-white border-b px-4 flex text-sm">
-            <button onclick="showTab(0)" id="tab0" class="tab-button active px-6 py-4 font-medium">📊 Основная таблица</button>
-            <button onclick="showTab(1)" id="tab1" class="tab-button px-6 py-4 font-medium">🚫 Отчет по закрытым рейсам</button>
-        </div>
+const NORMAL_FLIGHTS = new Set([203,204,209,210,211,212,213,214,215,216,225,226,247,248,249,250]);
 
-        <!-- Основная таблица -->
-        <div id="tab-content-0" class="flex flex-1 overflow-hidden">
-            <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0">
-                <div class="p-6 border-b flex items-center gap-x-3">
-                    <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
-                    <h1 class="header-font text-3xl">КРАСАВИА</h1>
-                </div>
-                <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
-                <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
+function cleanFlight(str) {
+    let f = String(str || '').trim().toUpperCase();
+    if (/^\d+$/.test(f)) f = 'KV-' + f;
+    f = f.replace(/[^KV0-9-]/g, '');
+    return f.substring(0, 6);
+}
 
-                <div class="p-6 border-t space-y-4">
-                    <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium">
-                        ➕ Добавить доступность
-                    </button>
-                    <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium">
-                        ➕ Добавить продажи
-                    </button>
-                    <button onclick="triggerClosedUpload()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3.5 rounded-3xl font-medium">
-                        ➕ Добавить закрытые рейсы
-                    </button>
-                    <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-3xl font-medium">
-                        💾 Сохранить данные
-                    </button>
-                </div>
+function isNormalFlight(flight) {
+    let num = parseInt(flight.replace('KV-', '')) || 0;
+    if (num >= 100 && num <= 199) return true;
+    return NORMAL_FLIGHTS.has(num);
+}
+
+function getBaseFlight(flight) {
+    let num = parseInt(flight.replace('KV-', '')) || 0;
+
+    // Новые правила по твоему запросу
+    if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
+    if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
+    if (num === 261) return 'KV-161';
+    if (num === 262) return 'KV-162';
+    if (num === 253) return 'KV-153';
+    if (num === 254) return 'KV-154';
+    if (num === 273) return 'KV-173';
+    if (num === 274) return 'KV-174';
+    if (num === 325) return 'KV-225';
+    if (num === 326) return 'KV-226';
+
+    if (num >= 300 && num <= 399) return `KV-${num - 200}`;
+    if (num >= 400 && num <= 499) return `KV-${num - 300}`;
+
+    return flight;
+}
+
+function parseDate(dateStr) {
+    if (!dateStr) return new Date(0);
+    const [day, month, year] = dateStr.split('.').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function normalizeDate(d) {
+    d = String(d || '').trim();
+    if (d.includes('.')) return d;
+    if (d.length === 8) return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+    return d;
+}
+
+function isPastDate(dateStr) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const flightDate = parseDate(dateStr);
+    return flightDate < today;
+}
+
+function processData() {
+    groupedData = {};
+    allData.forEach(row => {
+        if (row.length < 7) return;
+        let flight = cleanFlight(row[0]);
+        let base = getBaseFlight(flight);
+        if (!groupedData[base]) groupedData[base] = [];
+        groupedData[base].push(row);
+    });
+
+    renderFlightList();
+    if (Object.keys(groupedData).length > 0) {
+        selectFlight(Object.keys(groupedData).sort()[0]);
+    }
+}
+
+function renderFlightList() {
+    const container = document.getElementById('flight-list');
+    container.innerHTML = '';
+
+    Object.keys(groupedData).sort().forEach(base => {
+        const count = groupedData[base].length;
+        const div = document.createElement('div');
+        div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === base ? 'active' : ''}`;
+        div.innerHTML = `
+            <div class="flex items-center gap-x-3">
+                <span class="text-xl">✈️</span>
+                <span class="font-semibold">Рейс ${base}</span>
             </div>
+            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
+        `;
+        div.onclick = () => selectFlight(base);
+        container.appendChild(div);
+    });
+}
 
-            <div class="flex-1 flex flex-col">
-                <div class="krasavia-header px-6 py-5 flex items-center justify-between">
-                    <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
-                    <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/10 hover:bg-white/20 px-6 h-10 rounded-3xl text-sm font-medium">ОБНОВИТЬ</button>
-                </div>
+function selectFlight(base) {
+    currentFlight = base;
+    renderFlightList();
 
-                <div class="flex-1 p-4 md:p-8 overflow-auto">
-                    <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
-                        <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                        <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
-                    </div>
-                    <div id="table-container" class="flight-card p-4 md:p-6 hidden overflow-x-auto"></div>
-                </div>
-            </div>
-        </div>
+    let rows = groupedData[base] || [];
+    rows.sort((a, b) => parseDate(a[1]) - parseDate(b[1]));
 
-        <!-- Отчет по закрытым рейсам -->
-        <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
-            <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center">
-                <input id="closedSearch" type="text" placeholder="Поиск по рейсу" class="border border-gray-300 rounded-3xl px-5 py-2 w-72 focus:outline-none">
-                <button onclick="showClosedReport()" class="bg-gray-700 text-white px-8 py-2 rounded-3xl font-medium">Показать закрытые рейсы</button>
-                <button onclick="resetClosedFilters()" class="text-gray-500">Сбросить</button>
-            </div>
-            <div class="flex-1 p-6 overflow-auto">
-                <div id="closed-report-container" class="flight-card p-6"></div>
-            </div>
-        </div>
-    </div>
+    document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${base}</span>`;
 
-    <input type="file" id="availabilityInput" accept=".csv" multiple class="hidden" onchange="handleAvailabilityUpload(event)">
-    <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
-    <input type="file" id="closedInput" accept=".csv" multiple class="hidden" onchange="handleClosedUpload(event)">
+    let html = `<table class="w-full"><thead><tr>
+        <th>Дата</th>
+        <th class="text-right">(мест в продаже)</th>
+        <th class="text-right">(загрузка)</th>
+        <th class="text-right">Продано сегодня</th>
+        <th class="text-right">Продано вчера</th>
+        <th class="text-right">Загрузка</th>
+    </tr></thead><tbody>`;
 
-    <script src="script.js"></script>
-</body>
-</html>
+    rows.forEach(row => {
+        const date = row[1] || '-';
+        const totalAU = parseInt(row[5] || 0);
+        const freeSeg = parseInt(row[6] || 0);
+        const originalFlight = cleanFlight(row[0]);
+        const key = `${date}|${originalFlight}`;
+        const sales = salesMap[key] || {today:0, yesterday:0};
+        const isClosed = closedFlights.has(key);
+        const isExtra = !isNormalFlight(originalFlight);
+        const isFlew = isPastDate(date);
+
+        let statusHTML = '';
+        let rowClass = '';
+
+        if (isClosed) {
+            statusHTML = `<span class="closed-text">ЗАКРЫТ</span>`;
+            rowClass = 'closed-flight';
+        } else if (isFlew) {
+            statusHTML = `<span class="flew-text">УЛЕТЕЛ</span>`;
+            rowClass = 'flew-flight';
+        } else {
+            const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
+            const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
+            statusHTML = `<span class="${cls}">${occ}%</span>`;
+            rowClass = isExtra ? 'extra-flight' : '';
+        }
+
+        const flightDisplay = isExtra 
+            ? `${date} <span class="font-medium">${originalFlight}</span> <span class="extra-badge">(ДОП)</span>` 
+            : date;
+
+        html += `<tr class="${rowClass}">
+            <td>${flightDisplay}</td>
+            <td class="text-right font-semibold">${totalAU}</td>
+            <td class="text-right font-semibold">${freeSeg}</td>
+            <td class="text-right font-semibold">${sales.today}</td>
+            <td class="text-right font-semibold">${sales.yesterday}</td>
+            <td class="text-right font-bold">${statusHTML}</td>
+        </tr>`;
+    });
+
+    html += `</tbody></table>`;
+    document.getElementById('table-container').innerHTML = html;
+    document.getElementById('table-container').classList.remove('hidden');
+}
+
+// ====================== ЗАГРУЗКА ПРОДАЖ (ИСПРАВЛЕНО ПО DEALDATE) ======================
+function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+function handleSalesUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const lines = ev.target.result.split('\n').filter(l => l.trim());
+        if (lines.length < 2) return;
+
+        const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
+
+        // Находим две самые свежие даты продажи (DEALDATE)
+        const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
+        dealDates.sort((a, b) => {
+            const da = normalizeDate(a);
+            const db = normalizeDate(b);
+            return parseDate(db) - parseDate(da);
+        });
+
+        const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
+        const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
+
+        salesMap = {};
+
+        rows.forEach(row => {
+            if (row.length < 13) return;
+
+            const flyDateRaw = row[7] || '';      // FLYDATE (дата рейса)
+            const reisRaw = row[12] || '';        // REIS (номер рейса)
+            const dealDateRaw = row[5] || '';     // DEALDATE (дата продажи)
+
+            const date = normalizeDate(flyDateRaw);
+            const flight = cleanFlight(reisRaw);
+            if (!date || !flight) return;
+
+            const key = `${date}|${flight}`;
+            if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
+
+            const dealNorm = normalizeDate(dealDateRaw);
+            if (dealNorm === todayDeal) salesMap[key].today++;
+            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
+        });
+
+        alert('✅ Продажи загружены!\nСегодня и вчера посчитаны по DEALDATE');
+        if (currentFlight) selectFlight(currentFlight);
+    };
+    reader.readAsText(file, 'windows-1251');
+}
+
+// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
+function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
+function handleAvailabilityUpload(e) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    files.sort((a, b) => b.lastModified - a.lastModified);
+    const latestTwo = files.slice(0, 2);
+
+    let loaded = 0;
+    allData = [];
+
+    latestTwo.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            let lines = ev.target.result.split('\n').slice(3);
+            const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
+            allData = allData.concat(parsed);
+            loaded++;
+            if (loaded === latestTwo.length) processData();
+        };
+        reader.readAsText(file, 'windows-1251');
+    });
+}
+
+function triggerClosedUpload() { document.getElementById('closedInput').click(); }
+function handleClosedUpload(e) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    let loaded = 0;
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            let lines = ev.target.result.split('\n').slice(3);
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const cols = line.split(';').map(f => f.trim());
+                if (cols.length < 2) return;
+                const flight = cleanFlight(cols[0]);
+                const date = normalizeDate(cols[1]);
+                if (date && flight) closedFlights.add(`${date}|${flight}`);
+            });
+            loaded++;
+            if (loaded === files.length) {
+                alert(`✅ Загружено ${files.length} файлов закрытых рейсов`);
+                if (currentFlight) selectFlight(currentFlight);
+            }
+        };
+        reader.readAsText(file, 'windows-1251');
+    });
+}
+
+function saveData() {
+    const data = { allData, salesMap, closedFlights: Array.from(closedFlights), timestamp: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'krasavia-data.json';
+    a.click();
+    alert('✅ Все данные сохранены');
+}
+
+function refreshData() { location.reload(); }
+
+function showTab(n) {
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab' + n).classList.add('active');
+    document.getElementById('tab-content-0').classList.add('hidden');
+    document.getElementById('tab-content-1').classList.add('hidden');
+    document.getElementById('tab-content-' + n).classList.remove('hidden');
+}
+
+async function loadSavedData() {
+    try {
+        const res = await fetch(DATA_FILE + '?t=' + Date.now());
+        if (res.ok) {
+            const saved = await res.json();
+            allData = saved.allData || [];
+            salesMap = saved.salesMap || {};
+            if (saved.closedFlights) closedFlights = new Set(saved.closedFlights);
+            processData();
+        }
+    } catch(e) {}
+}
+
+window.onload = () => loadSavedData();
