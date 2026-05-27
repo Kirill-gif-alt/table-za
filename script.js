@@ -71,6 +71,7 @@ function handleSalesUpload(e) {
 
         rows.forEach(row => {
             if (row.length < 13) return;
+
             const flyDateRaw = row[7] || '';
             const reisRaw = row[12] || '';
             const dealDateRaw = row[5] || '';
@@ -146,6 +147,14 @@ function renderFlightList() {
     });
 }
 
+function getWeekNumber(d) {
+    d = new Date(d);
+    d.setHours(0, 0, 0, 0);
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return weekNo;
+}
+
 function selectFlight(base) {
     currentFlight = base;
     renderFlightList();
@@ -188,6 +197,9 @@ function selectFlight(base) {
     </thead>
     <tbody>`;
 
+    let lastWeek = null;
+    let isEvenWeek = true;
+
     rows.forEach(row => {
         const date = row[1] || '-';
         const totalAU = parseInt(row[5] || 0);
@@ -201,17 +213,25 @@ function selectFlight(base) {
         const flightDate = new Date(date.split('.').reverse().join('-'));
         const isFlew = flightDate < new Date(new Date().setHours(0,0,0,0));
 
-        let rowClass = '';
-        let statusHTML = '';
+        // Чередование по неделям
+        const weekNum = getWeekNumber(flightDate);
+        if (lastWeek === null) lastWeek = weekNum;
+        if (weekNum !== lastWeek) {
+            isEvenWeek = !isEvenWeek;
+            lastWeek = weekNum;
+        }
 
+        let rowClass = isEvenWeek ? 'week-even' : 'week-odd';
+        if (isClosed || isFlew) rowClass = 'closed-flight';
+        if (isExtra) rowClass += ' extra-flight';
+
+        let statusHTML = '';
         if (isClosed || isFlew) {
-            rowClass = 'closed-flight';
             statusHTML = isClosed ? `<span class="closed-text">ЗАКРЫТ</span>` : `<span class="flew-text">УЛЕТЕЛ</span>`;
         } else {
             const occ = totalAU > 0 ? Math.round((freeSeg / totalAU) * 100) : 0;
             const cls = occ >= 75 ? 'occupancy-high' : (occ >= 45 ? 'occupancy-med' : 'occupancy-low');
             statusHTML = `<span class="${cls}">${occ}%</span>`;
-            rowClass = isExtra ? 'extra-flight' : '';
         }
 
         const dateCell = isExtra 
@@ -234,7 +254,7 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// === ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ===
+// ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
 function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
 function handleAvailabilityUpload(e) {
     const files = Array.from(e.target.files).sort((a,b)=>b.lastModified-a.lastModified).slice(0,2);
@@ -296,9 +316,6 @@ function showTab(n) {
     document.getElementById('tab-content-0').classList.toggle('hidden', n!==0);
     document.getElementById('tab-content-1').classList.toggle('hidden', n!==1);
 }
-
-function showClosedReport() { alert('Функция отчёта по закрытым рейсам в разработке'); }
-function resetClosedFilters() { }
 
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 
