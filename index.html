@@ -21,7 +21,8 @@
         .occupancy-high { color: #22C55E; font-weight: 700; }
         .occupancy-med  { color: #F59E0B; font-weight: 700; }
         .occupancy-low  { color: #EF4444; font-weight: 700; }
-        .extra-flight { color: #8B00FF !important; font-weight: 700; }
+        tr.extra-flight { background: #f3e8ff !important; } /* фиолетовый фон */
+        .extra-badge { color: #8B00FF; font-weight: 700; }
         .flight-item { transition: all 0.2s; }
         .flight-item:hover { background: #f1f5f9; }
         .flight-item.active { background: #0474BC; color: white; }
@@ -31,7 +32,6 @@
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
 
     <div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row h-screen">
-        <!-- Боковая панель -->
         <div class="w-full md:w-80 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col flex-shrink-0">
             <div class="p-6 border-b flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
@@ -41,32 +41,27 @@
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
 
             <div class="p-6 border-t space-y-6">
-                <!-- Доступность -->
                 <div class="path-box p-5 rounded-3xl">
-                    <p class="text-xs text-gray-500 mb-1">Доступность (2 последних файла)</p>
-                    <p class="text-[#0474BC] font-medium text-sm break-all">Y:\Отделы\11 КС\ООРП\Загрузка\База оп</p>
-                    <button onclick="triggerAvailabilityUpload()" 
-                            class="mt-4 w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium text-lg">
-                        ➕ Добавить файлы доступности
+                    <p class="text-xs text-gray-500 mb-1">Доступность — 2 последних файла</p>
+                    <p class="text-[#0474BC] font-medium text-sm">Y:\Отделы\11 КС\ООРП\Загрузка\База оп</p>
+                    <button onclick="triggerAvailabilityUpload()" class="mt-4 w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium">
+                        ➕ Выбрать папку с доступностью
                     </button>
                 </div>
 
-                <!-- Продажи -->
                 <div class="path-box p-5 rounded-3xl">
                     <p class="text-xs text-gray-500 mb-1">Продажи</p>
-                    <p class="text-[#8B00FF] font-medium text-sm break-all">Y:\Отделы\11 КС\ООРП\Загрузка\csv</p>
-                    <button onclick="triggerSalesUpload()" 
-                            class="mt-4 w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium text-lg">
-                        ➕ Добавить файл продаж
+                    <p class="text-[#8B00FF] font-medium text-sm">Y:\Отделы\11 КС\ООРП\Загрузка\csv</p>
+                    <button onclick="triggerSalesUpload()" class="mt-4 w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium">
+                        ➕ Выбрать файл продаж
                     </button>
                 </div>
 
-                <input type="file" id="availabilityInput" accept=".csv" multiple class="hidden" onchange="handleAvailabilityUpload(event)">
+                <input type="file" id="availabilityInput" accept=".csv" multiple webkitdirectory directory class="hidden" onchange="handleAvailabilityUpload(event)">
                 <input type="file" id="salesInput" accept=".csv" class="hidden" onchange="handleSalesUpload(event)">
             </div>
         </div>
 
-        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
             <div class="krasavia-header px-6 md:px-8 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
@@ -84,7 +79,6 @@
     </div>
 
     <script>
-        // === ВЕСЬ РАБОЧИЙ КОД (с улучшенным выделением доп.рейсов) ===
         let allData = [];
         let salesMap = {};
         let groupedData = {};
@@ -185,10 +179,11 @@
                 const key = `${date}|${cleanFlight(row[0])}`;
                 const sales = salesMap[key] || {today:0, yesterday:0};
                 const isExtra = isExtraFlight(cleanFlight(row[0]));
+                const rowClass = isExtra ? 'extra-flight' : '';
                 const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
 
-                html += `<tr class="${isExtra ? 'extra-flight' : ''}">
-                    <td>${date}</td>
+                html += `<tr class="${rowClass}">
+                    <td>${date} ${isExtra ? '<span class="extra-badge ml-2">(ДОП)</span>' : ''}</td>
                     <td class="text-right font-semibold">${totalAU}</td>
                     <td class="text-right font-semibold">${freeSeg}</td>
                     <td class="text-right font-semibold">${sales.today}</td>
@@ -203,30 +198,39 @@
         }
 
         function triggerAvailabilityUpload() {
-            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\База оп\n\nВыбери два последних файла доступности");
+            alert("✅ ОТКРОЙТЕ ПАПКУ:\n\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\База оп\n\nВыберите всю папку (не отдельные файлы)");
             document.getElementById('availabilityInput').click();
         }
 
         function handleAvailabilityUpload(e) {
-            const files = Array.from(e.target.files);
-            if (!files.length) return;
+            const files = Array.from(e.target.files).filter(f => f.name.endsWith('.csv'));
+            if (files.length === 0) return alert("В папке нет CSV-файлов");
+
+            // Сортируем по имени (самые новые обычно имеют большую дату в названии)
+            files.sort((a, b) => b.name.localeCompare(a.name));
+            const latestTwo = files.slice(0, 2);
+
             let loaded = 0;
             allData = [];
-            files.forEach(file => {
+
+            latestTwo.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = ev => {
                     let lines = ev.target.result.split('\n').slice(3);
                     const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
                     allData = allData.concat(parsed);
                     loaded++;
-                    if (loaded === files.length) processData();
+                    if (loaded === latestTwo.length) {
+                        processData();
+                        alert(`✅ Загружено 2 самых новых файла из папки`);
+                    }
                 };
                 reader.readAsText(file, 'windows-1251');
             });
         }
 
         function triggerSalesUpload() {
-            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\csv\n\nВыбери файл Tickets_SALE_Last14Days.csv");
+            alert("✅ ОТКРОЙТЕ ПАПКУ:\n\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\csv\n\nВыберите файл Tickets_SALE_Last14Days.csv");
             document.getElementById('salesInput').click();
         }
 
@@ -257,7 +261,7 @@
 
         function refreshData() { location.reload(); }
 
-        window.onload = () => console.log('%cКРАСАВИА готова — пути прописаны', 'color:#0474BC;font-weight:bold');
+        window.onload = () => console.log('%cКРАСАВИА — всё готово', 'color:#0474BC;font-weight:bold');
     </script>
 </body>
 </html>
