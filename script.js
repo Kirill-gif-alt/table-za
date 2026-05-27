@@ -23,7 +23,6 @@ function isNormalFlight(flight) {
 
 function getBaseFlight(flight) {
     let num = parseInt(flight.replace('KV-', '')) || 0;
-
     if (num === 151 || num === 351 || num === 355 || num === 455) return 'KV-155';
     if (num === 152 || num === 352 || num === 356 || num === 456) return 'KV-156';
     if (num === 261) return 'KV-161';
@@ -34,10 +33,8 @@ function getBaseFlight(flight) {
     if (num === 274) return 'KV-174';
     if (num === 325) return 'KV-225';
     if (num === 326) return 'KV-226';
-
     if (num >= 300 && num <= 399) return `KV-${num - 200}`;
     if (num >= 400 && num <= 499) return `KV-${num - 300}`;
-
     return flight;
 }
 
@@ -49,9 +46,26 @@ function parseDate(dateStr) {
 
 function normalizeDate(d) {
     d = String(d || '').trim();
-    if (d.includes('.')) return d;
-    if (d.length === 8) return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+    if (!d) return '';
+    if (d.includes('.')) {
+        const parts = d.split('.');
+        if (parts.length === 3) {
+            return `${parts[0].padStart(2,'0')}.${parts[1].padStart(2,'0')}.${parts[2]}`;
+        }
+        return d;
+    }
+    if (d.length === 8 && /^\d{8}$/.test(d)) {
+        return `${d.slice(0,2)}.${d.slice(2,4)}.${d.slice(4)}`;
+    }
     return d;
+}
+
+function getTodayYesterday() {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const format = d => `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getFullYear()}`;
+    return { today: format(today), yesterday: format(yesterday) };
 }
 
 function isPastDate(dateStr) {
@@ -87,7 +101,7 @@ function renderFlightList() {
         div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === base ? 'active' : ''}`;
         div.innerHTML = `
             <div class="flex items-center gap-x-3">
-                <span class="text-xl">✈️</span>
+                <span class="text-xl">Airplane</span>
                 <span class="font-semibold">Рейс ${base}</span>
             </div>
             <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-3xl">${count}</span>
@@ -161,27 +175,32 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ПРОДАЖ ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ (ИСПРАВЛЕНО) ======================
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+
 function handleSalesUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = ev => {
-        const lines = ev.target.result.split('\n').filter(l => l.trim());
-        const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
+        let text = ev.target.result;
+        const separator = text.includes(';') && !text.includes(',') ? ';' : ',';
+        console.log('%c🔥 Разделитель продаж:', 'color:orange;font-weight:bold', separator);
 
-        const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
-        dealDates.sort((a, b) => parseInt(b) - parseInt(a));
+        const lines = text.split('\n').filter(l => l.trim());
+        const rows = lines.slice(1).map(l => l.split(separator).map(f => f.trim()));
 
-        const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
-        const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
+        const dates = getTodayYesterday();
+        console.log('%c📅 Сегодня:', 'color:lime', dates.today);
+        console.log('%c📅 Вчера:', 'color:lime', dates.yesterday);
 
         salesMap = {};
+        let salesCount = 0;
 
         rows.forEach(row => {
             if (row.length < 13) return;
+
             const flyDateRaw = row[7] || '';
             const reisRaw = row[12] || '';
             const dealDateRaw = row[5] || '';
@@ -194,19 +213,23 @@ function handleSalesUpload(e) {
             if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
 
             const dealNorm = normalizeDate(dealDateRaw);
-            if (dealNorm === todayDeal) salesMap[key].today++;
-            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
+
+            if (dealNorm === dates.today) {
+                salesMap[key].today++;
+                salesCount++;
+            } else if (dealNorm === dates.yesterday) {
+                salesMap[key].yesterday++;
+                salesCount++;
+            }
         });
 
-        alert('✅ Продажи загружены!');
+        console.log(`%c✅ Загружено продаж: ${salesCount}`, 'color:lime;font-size:16px');
+        console.table(Object.fromEntries(Object.entries(salesMap).slice(0,10)));
 
-        // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ
-        if (currentFlight) {
-            selectFlight(currentFlight);
-        } else if (Object.keys(groupedData).length > 0) {
-            const first = Object.keys(groupedData).sort()[0];
-            selectFlight(first);
-        }
+        alert(`✅ Продажи загружены!\nСегодня (${dates.today}): ${Object.values(salesMap).reduce((a,b)=>a+b.today,0)}\nВчера (${dates.yesterday}): ${Object.values(salesMap).reduce((a,b)=>a+b.yesterday,0)}`);
+
+        if (currentFlight) selectFlight(currentFlight);
+        else if (Object.keys(groupedData).length > 0) selectFlight(Object.keys(groupedData).sort()[0]);
     };
     reader.readAsText(file, 'windows-1251');
 }
@@ -254,7 +277,7 @@ function handleClosedUpload(e) {
             });
             loaded++;
             if (loaded === files.length) {
-                alert(`✅ Загружено ${files.length} файлов закрытых рейсов`);
+                alert(`Загружено ${files.length} файлов закрытых рейсов`);
                 if (currentFlight) selectFlight(currentFlight);
             }
         };
@@ -269,7 +292,7 @@ function saveData() {
     a.href = URL.createObjectURL(blob);
     a.download = 'krasavia-data.json';
     a.click();
-    alert('✅ Все данные сохранены в krasavia-data.json');
+    alert('Все данные сохранены в krasavia-data.json');
 }
 
 function refreshData() { location.reload(); }
