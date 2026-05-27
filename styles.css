@@ -2,16 +2,17 @@
 
 :root { --primary: #012A4A; }
 
-* { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+* { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 200ms; }
 
 .tailwind-ready { font-family: 'Inter', system_ui, sans-serif; }
 .header-font { font-family: 'Space Grotesk', sans-serif; }
 
 .krasavia-header { background: linear-gradient(90deg, #012A4A, #011F38); }
+
 .flight-card { 
     background: white; 
-    border-radius: 24px; 
-    box-shadow: 0 20px 40px -15px rgb(1 42 74 / 0.15); 
+    border-radius: 28px; 
+    box-shadow: 0 25px 50px -12px rgb(1 42 74 / 0.15); 
     overflow: hidden;
 }
 
@@ -22,10 +23,9 @@ table {
     font-size: 14.5px; 
     min-width: 720px; 
     position: relative;
-    border-top: 2px solid #012A4A;
 }
 
-/* Основная шапка */
+/* ФИКСИРОВАННАЯ ШАПКА + СУММЫ (теперь точно не уезжает) */
 th { 
     background: #012A4A; 
     color: white; 
@@ -33,68 +33,47 @@ th {
     position: sticky; 
     top: 0; 
     z-index: 50; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    padding: 16px 14px;
-    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    padding: 18px 16px;
 }
 
-/* Строка с суммами — сразу под шапкой */
 .summary-row th {
     background: #012A4A !important;
     color: white !important;
-    font-weight: 700;
     position: sticky; 
-    top: 53px; 
+    top: 56px; 
     z-index: 45;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    padding: 14px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
 td { 
-    color: #012A4A; 
-    font-weight: 500; 
-    padding: 14px 14px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 16px; 
+    border-bottom: 1px solid #f1f5f9; 
 }
 
-tr:hover { background: #f8fafc; }
+/* Живые эффекты */
+tr:hover { 
+    background: #f8fafc; 
+    transform: scale(1.01); 
+}
+
 tr.extra-flight { background: #f3e8ff !important; }
-
-tr.closed-flight, 
-tr.flew-flight { 
-    background: #e5e7eb !important; 
-    color: #6b7280; 
-}
+tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; color: #6b7280; }
 
 .extra-badge { 
     color: #8B00FF; 
-    font-weight: 700; 
     background: #f3e8ff; 
-    padding: 3px 9px; 
+    padding: 4px 12px; 
     border-radius: 9999px; 
-    font-size: 12.5px;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(139,0,255,0.15);
 }
 
-.closed-text, .flew-text { color: #ef4444 !important; font-weight: 700; }
+button:hover { transform: translateY(-1px); }
 
-.occupancy-high { color: #22C55E; font-weight: 700; }
-.occupancy-med  { color: #F59E0B; font-weight: 700; }
-.occupancy-low  { color: #EF4444; font-weight: 700; }
-
-.flight-item { transition: all 0.2s; }
-.flight-item:hover { background: #f1f5f9; }
-.flight-item.active { background: #012A4A; color: white; }
-
-.tab-button {
-    border-bottom: 3px solid transparent;
-}
-.tab-button.active {
-    border-bottom: 3px solid #012A4A;
-    color: #012A4A;
-}
-
+/* Адаптивность */
 @media (max-width: 768px) {
     table { font-size: 13px; min-width: 100%; }
-    th, td { padding: 12px 10px; }
-    .summary-row th { top: 47px; }
+    th, td { padding: 14px 10px; }
+    .summary-row th { top: 50px; }
 }
