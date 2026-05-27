@@ -30,8 +30,6 @@ tr.closed-flight { background: #e5e7eb !important; }
 .flight-item:hover { background: #f1f5f9; }
 .flight-item.active { background: #0474BC; color: white; }
 
-.path-box { background: #f1f5f9; border: 3px dashed #0474BC; border-radius: 20px; }
-
 .tab-button {
     border-bottom: 3px solid transparent;
 }
