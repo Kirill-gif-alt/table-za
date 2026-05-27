@@ -41,14 +41,12 @@
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
             
             <div class="p-6 border-t">
-                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium flex items-center justify-center gap-x-2">
-                    Загрузить другой CSV
-                </button>
+                <button onclick="triggerFileUpload()" class="w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">Загрузить другой CSV</button>
                 <input type="file" id="fileInput" accept=".csv" class="hidden" onchange="handleManualUpload(event)">
             </div>
         </div>
 
-        <!-- Основная область -->
+        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
             <div class="krasavia-header px-8 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-3xl font-semibold"></div>
@@ -61,7 +59,7 @@
             <div class="flex-1 p-8 overflow-auto">
                 <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
+                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка...</p>
                 </div>
 
                 <div id="table-container" class="flight-card p-6 hidden"></div>
@@ -91,7 +89,6 @@
 
             try {
                 const res = await fetch(filePath);
-                if (!res.ok) throw new Error('Файл не найден');
                 let text = await res.text();
 
                 // Пропускаем первые 3 строки (метаданные)
@@ -108,7 +105,7 @@
                     }
                 });
             } catch (err) {
-                alert('Ошибка загрузки CSV: ' + err.message);
+                alert('Ошибка загрузки CSV');
                 document.getElementById('loading-screen').classList.add('hidden');
             }
         }
@@ -117,8 +114,8 @@
             groupedData = {};
 
             allData.forEach(row => {
-                // Берём первую колонку как номер рейса (самое надёжное)
-                const rawFlight = Object.values(row)[0] || '';
+                const values = Object.values(row);
+                const rawFlight = values[0] || '';
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 
                 if (!groupedData[flight]) groupedData[flight] = [];
@@ -178,11 +175,12 @@
                 <tbody>`;
 
             rows.forEach(row => {
-                const date = Object.values(row)[1] || '-';           // 2-я колонка — Дата
-                const segment = Object.values(row)[2] || '-';        // 3-я — Сегмент
-                const route = Object.values(row)[3] || '-';          // 4-я — Маршрут
-                const totalAU = parseInt(Object.values(row)[4] || 0); // 5-я — Total AU
-                const freeSeg = parseInt(Object.values(row)[5] || 0); // 6-я — Free SegBkd
+                const values = Object.values(row);
+                const date = values[1] || '-';
+                const segment = values[2] || '-';
+                const route = values[3] || '-';
+                const totalAU = parseInt(values[5] || 0);   // Total AU
+                const freeSeg = parseInt(values[6] || 0);   // Free SegBkd
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
                 const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
