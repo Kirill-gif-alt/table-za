@@ -9,56 +9,41 @@
 </head>
 <body class="tailwind-ready bg-gray-50">
 
-    <div class="max-w-screen-2xl mx-auto flex flex-col h-screen">
+    <div class="flex h-screen overflow-hidden">
 
-        <!-- Верхняя панель -->
-        <div class="bg-white border-b px-4 flex text-sm md:text-base shadow-sm">
-            <button onclick="showTab(0)" id="tab0" class="tab-button active px-6 py-4 font-medium flex-1 md:flex-none">Основная таблица</button>
-            <button onclick="showTab(1)" id="tab1" class="tab-button px-6 py-4 font-medium flex-1 md:flex-none">Отчет по закрытым рейсам</button>
-        </div>
-
-        <div id="tab-content-0" class="flex flex-1 overflow-hidden">
-            <!-- Боковая панель (на мобильных сворачивается красиво) -->
-            <div class="hidden md:flex w-80 bg-white text-[#012A4A] border-r border-gray-200 flex-col flex-shrink-0 shadow-xl">
-                <div class="p-6 border-b flex items-center gap-x-3 bg-gradient-to-r from-[#012A4A] to-[#011F38] text-white rounded-tr-3xl">
-                    <div class="w-9 h-9 bg-white text-[#012A4A] rounded-2xl flex items-center justify-center text-3xl font-bold">К</div>
-                    <h1 class="header-font text-3xl tracking-tighter">КРАСАВИА</h1>
-                </div>
-                <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
-                <div id="flight-list" class="flex-1 overflow-auto px-3 py-2 space-y-1"></div>
-
-                <div class="p-6 border-t space-y-3">
-                    <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#012A4A] hover:bg-[#011F38] text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
-                        ✈️ Добавить доступность
-                    </button>
-                    <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
-                        💰 Добавить продажи
-                    </button>
-                    <button onclick="triggerClosedUpload()" class="w-full bg-gray-700 hover:bg-gray-800 text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
-                        🔒 Добавить закрытые рейсы
-                    </button>
-                    <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
-                        💾 Сохранить данные
-                    </button>
-                </div>
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="w-72 bg-white border-r border-gray-200 flex flex-col shadow-xl">
+            <div class="p-6 border-b flex items-center gap-x-3 bg-gradient-to-r from-[#012A4A] to-[#011F38] text-white">
+                <div class="w-10 h-10 bg-white text-[#012A4A] rounded-3xl flex items-center justify-center text-3xl font-bold shadow-inner">К</div>
+                <h1 class="header-font text-3xl tracking-tighter">КРАСАВИА</h1>
             </div>
+            
+            <div class="px-6 pt-6 pb-3 text-xs uppercase tracking-widest text-gray-500 font-semibold">Выберите рейс</div>
+            <div id="flight-list" class="flex-1 overflow-auto px-3 py-2 space-y-1"></div>
 
-            <!-- Основная область -->
-            <div class="flex-1 flex flex-col">
-                <div class="krasavia-header px-6 py-5 flex items-center justify-between shadow-inner">
-                    <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold text-white"></div>
-                    <button onclick="refreshData()" class="flex items-center gap-x-2 bg-white/20 hover:bg-white/30 px-6 h-11 rounded-3xl text-sm font-medium text-white backdrop-blur-md">⟳ ОБНОВИТЬ</button>
-                </div>
-
-                <div class="flex-1 p-4 md:p-8 overflow-auto">
-                    <div id="table-container" class="flight-card p-4 md:p-6 hidden overflow-x-auto shadow-2xl"></div>
-                </div>
+            <div class="p-6 space-y-3 border-t">
+                <button onclick="triggerAvailabilityUpload()" class="w-full bg-[#012A4A] hover:bg-[#011F38] text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-lg">✈️ Добавить доступность</button>
+                <button onclick="triggerSalesUpload()" class="w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-lg">💰 Добавить продажи</button>
+                <button onclick="triggerClosedUpload()" class="w-full bg-gray-700 hover:bg-gray-800 text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-lg">🔒 Добавить закрытые рейсы</button>
+                <button onclick="saveData()" class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-3xl font-medium flex items-center justify-center gap-2 shadow-lg">💾 Сохранить данные</button>
             </div>
         </div>
 
-        <!-- Второй таб (отчёт) -->
-        <div id="tab-content-1" class="flex-1 hidden flex-col overflow-hidden">
-            <!-- ... оставляем как было ... -->
+        <!-- ОСНОВНАЯ ОБЛАСТЬ -->
+        <div class="flex-1 flex flex-col">
+            
+            <!-- Верхний хедер -->
+            <div class="krasavia-header px-8 py-5 flex items-center justify-between">
+                <div id="selected-flight-title" class="text-3xl font-semibold text-white"></div>
+                <div class="flex items-center gap-x-4">
+                    <button onclick="refreshData()" class="flex items-center gap-x-3 bg-white/20 hover:bg-white/30 px-7 h-11 rounded-3xl text-white font-medium backdrop-blur-md">⟳ ОБНОВИТЬ</button>
+                </div>
+            </div>
+
+            <!-- Таблица -->
+            <div class="flex-1 p-8 overflow-auto bg-gray-50">
+                <div id="table-container" class="flight-card p-2 hidden"></div>
+            </div>
         </div>
     </div>
 
