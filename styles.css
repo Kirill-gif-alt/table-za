@@ -10,21 +10,41 @@
 .krasavia-header { background: linear-gradient(90deg, #012A4A, #011F38); }
 .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(1 42 74); }
 
-table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
-th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+table { 
+    border-collapse: collapse; 
+    width: 100%; 
+    font-size: 14px; 
+    min-width: 620px; 
+    position: relative;
+}
+
+th, td { 
+    padding: 12px 12px; 
+    text-align: left; 
+    border-bottom: 1px solid #e5e7eb; 
+}
+
 th { 
     background: #012A4A; 
     color: white; 
     font-weight: 600; 
     position: sticky; 
     top: 0; 
-    z-index: 20; 
+    z-index: 30; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
 td { color: #012A4A; font-weight: 500; }
 
 tr:hover { background: #f8fafc; }
 tr.extra-flight { background: #f3e8ff !important; }
-tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; }
+
+/* СЕРЫЙ ДЛЯ ЗАКРЫТЫХ И УЛЕТЕВШИХ */
+tr.closed-flight, 
+tr.flew-flight { 
+    background: #e5e7eb !important; 
+    color: #6b7280; 
+}
 
 .extra-badge { color: #8B00FF; font-weight: 700; }
 .closed-text, .flew-text { color: #ef4444 !important; font-weight: 700; }
@@ -43,6 +63,13 @@ tr.closed-flight, tr.flew-flight { background: #e5e7eb !important; }
 .tab-button.active {
     border-bottom: 3px solid #012A4A;
     color: #012A4A;
+}
+
+/* ИТОГОВАЯ СТРОКА */
+tfoot tr {
+    background: #f1f5f9 !important;
+    font-weight: 700;
+    border-top: 3px solid #012A4A;
 }
 
 @media (max-width: 768px) {
