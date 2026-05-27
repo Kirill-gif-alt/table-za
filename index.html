@@ -29,7 +29,7 @@
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
 
     <div class="max-w-screen-2xl mx-auto flex h-screen">
-        <!-- Боковая панель с рейсами -->
+        <!-- Боковая панель -->
         <div class="w-72 bg-white text-[#012A4A] border-r border-gray-200 flex flex-col">
             <div class="p-6 border-b flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-[#0474BC] text-white rounded-2xl flex items-center justify-center text-2xl">✈️</div>
@@ -61,12 +61,7 @@
             <div class="flex-1 p-8 overflow-auto">
                 <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка CSV...</p>
-                </div>
-
-                <div id="no-selection" class="hidden flex flex-col items-center justify-center h-full text-center">
-                    <div class="text-7xl mb-6">✈️</div>
-                    <p class="text-2xl text-white/70">Выберите рейс слева</p>
+                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
                 </div>
 
                 <div id="table-container" class="flight-card p-6 hidden"></div>
@@ -84,19 +79,17 @@
         let groupedData = {};
         let currentFlight = null;
 
-        // Функция очистки номера рейса до 6 символов
-        function cleanFlight(flightStr) {
-            let f = String(flightStr || '').trim().toUpperCase();
-            f = f.replace(/[^A-Z0-9-]/g, '');
+        function cleanFlight(str) {
+            let f = String(str || '').trim().toUpperCase();
+            f = f.replace(/[^KV0-9-]/g, '');
             return f.substring(0, 6);
         }
 
-        // Поиск значения по нескольким возможным названиям колонок
-        function findValue(row, possibleKeys) {
+        function findValue(row, keys) {
             for (let key in row) {
-                const cleanKey = String(key).trim().toLowerCase();
-                for (let k of possibleKeys) {
-                    if (cleanKey.includes(k.toLowerCase())) {
+                const nKey = String(key).trim().toLowerCase();
+                for (let k of keys) {
+                    if (nKey.includes(k.toLowerCase())) {
                         return row[key];
                     }
                 }
@@ -107,26 +100,21 @@
         async function loadCSV(filePath) {
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('table-container').classList.add('hidden');
-            document.getElementById('no-selection').classList.add('hidden');
 
             try {
                 const res = await fetch(filePath);
-                if (!res.ok) throw new Error('CSV файл не найден');
-                let csvText = await res.text();
+                if (!res.ok) throw new Error('Файл не найден');
+                let text = await res.text();
 
-                // === УДАЛЯЕМ ПУСТЫЕ СТРОКИ СВЕРХУ ===
-                const lines = csvText.split('\n');
-                let startIndex = 0;
-                while (startIndex < lines.length && lines[startIndex].trim() === '') {
-                    startIndex++;
-                }
-                csvText = lines.slice(startIndex).join('\n');
+                // === ПРОПУСКАЕМ ПЕРВЫЕ 3 СТРОКИ (метаданные) ===
+                let lines = text.split('\n');
+                lines = lines.slice(3);           // начинаем с 4-й строки
+                const cleanCSV = lines.join('\n');
 
-                Papa.parse(csvText, {
+                Papa.parse(cleanCSV, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: function(results) {
-                        console.log("✅ Заголовки CSV после очистки:", results.meta.fields);
+                    complete: (results) => {
                         allData = results.data;
                         processData();
                     }
@@ -141,8 +129,8 @@
             groupedData = {};
 
             allData.forEach(row => {
-                let rawFlight = findValue(row, ['Рейс', 'рейс', 'Flight', 'KV']);
-                let flight = cleanFlight(rawFlight) || 'Неизвестный';
+                const rawFlight = findValue(row, ['Рейс', 'рейс', 'Flight', 'KV']);
+                const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 if (!groupedData[flight]) groupedData[flight] = [];
                 groupedData[flight].push(row);
             });
@@ -150,10 +138,9 @@
             renderFlightList();
             document.getElementById('loading-screen').classList.add('hidden');
 
-            // Автоматически выбираем первый рейс
             if (Object.keys(groupedData).length > 0) {
-                const firstFlight = Object.keys(groupedData).sort()[0];
-                selectFlight(firstFlight);
+                const first = Object.keys(groupedData).sort()[0];
+                selectFlight(first);
             }
         }
 
