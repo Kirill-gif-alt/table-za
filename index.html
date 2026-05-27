@@ -59,7 +59,7 @@
             <div class="flex-1 p-8 overflow-auto">
                 <div id="loading-screen" class="hidden flex flex-col items-center justify-center h-full">
                     <div class="w-16 h-16 border-4 border-white/30 border-t-[#04B3EC] rounded-full animate-spin"></div>
-                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка...</p>
+                    <p class="mt-6 text-[#04B3EC] text-xl">Загрузка данных...</p>
                 </div>
 
                 <div id="table-container" class="flight-card p-6 hidden"></div>
@@ -105,7 +105,7 @@
                     }
                 });
             } catch (err) {
-                alert('Ошибка загрузки CSV');
+                alert('Ошибка загрузки CSV: ' + err.message);
                 document.getElementById('loading-screen').classList.add('hidden');
             }
         }
@@ -115,7 +115,7 @@
 
             allData.forEach(row => {
                 const values = Object.values(row);
-                const rawFlight = values[0] || '';
+                const rawFlight = values[0] || '';                    // колонка A — Рейс
                 const flight = cleanFlight(rawFlight) || 'Неизвестный';
                 
                 if (!groupedData[flight]) groupedData[flight] = [];
@@ -176,11 +176,11 @@
 
             rows.forEach(row => {
                 const values = Object.values(row);
-                const date = values[1] || '-';
-                const segment = values[2] || '-';
-                const route = values[3] || '-';
-                const totalAU = parseInt(values[5] || 0);   // Total AU
-                const freeSeg = parseInt(values[6] || 0);   // Free SegBkd
+                const date    = values[1] || '-';     // B — Дата
+                const segment = values[2] || '-';     // C — Сегмент
+                const route   = values[3] || '-';     // D — Маршрут
+                const totalAU = parseInt(values[5] || 0);  // F — Total AU
+                const freeSeg = parseInt(values[6] || 0);  // G — Free SegBkd
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
 
                 const occClass = occupancy >= 75 ? 'occupancy-high' : (occupancy >= 45 ? 'occupancy-med' : 'occupancy-low');
