@@ -14,8 +14,23 @@
         .krasavia-header { background: linear-gradient(90deg, #012A4A, #045CA4); }
         .flight-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px -10px rgb(4 116 188); }
         table { border-collapse: collapse; width: 100%; font-size: 14px; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background: #012A4A; color: white; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        th, td { 
+            padding: 12px 16px; 
+            text-align: left; 
+            border-bottom: 1px solid #e5e7eb; 
+        }
+        th { 
+            background: #012A4A; 
+            color: white; 
+            font-weight: 600; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+        }
+        td { 
+            color: #012A4A;           /* ← ФИКС: тёмный текст на белом фоне */
+            font-weight: 500;
+        }
         tr:hover { background: #f8fafc; }
         .occupancy-high { color: #10b981; font-weight: 700; }
         .occupancy-med  { color: #f59e0b; font-weight: 700; }
@@ -73,7 +88,6 @@
             return f.substring(0, 6);
         }
 
-        // Парсинг даты DD.MM.YYYY → объект Date
         function parseDate(dateStr) {
             if (!dateStr) return new Date(0);
             const [day, month, year] = dateStr.split('.').map(Number);
@@ -84,37 +98,22 @@
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('table-container').classList.add('hidden');
 
-            try {
-                const res = await fetch(filePath);
-                const buffer = await res.arrayBuffer();
-                const decoder = new TextDecoder('windows-1251'); // ← ЭТО ГЛАВНЫЙ ФИКС
-                let text = decoder.decode(buffer);
+            const res = await fetch(filePath);
+            const buffer = await res.arrayBuffer();
+            const decoder = new TextDecoder('windows-1251');
+            let text = decoder.decode(buffer);
 
-                let lines = text.split('\n').slice(3); // пропускаем 3 строки метаданных
+            let lines = text.split('\n').slice(3);
+            allData = lines.filter(line => line.trim() !== '').map(line => line.split(';').map(f => f.trim()));
 
-                allData = lines
-                    .filter(line => line.trim() !== '')
-                    .map(line => line.split(';').map(field => field.trim()));
-
-                console.log('%c=== RAW PARSED DATA (первые 5 строк) ===', 'color: lime; font-weight: bold');
-                console.table(allData.slice(0, 5));
-
-                processData();
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка: ' + err.message);
-                document.getElementById('loading-screen').classList.add('hidden');
-            }
+            processData();
         }
 
         function processData() {
             groupedData = {};
-
             allData.forEach(row => {
-                if (row.length < 5) return;
-                const rawFlight = row[0] || '';
-                const flight = cleanFlight(rawFlight) || 'Неизвестный';
-
+                if (row.length < 7) return;
+                const flight = cleanFlight(row[0]) || 'Неизвестный';
                 if (!groupedData[flight]) groupedData[flight] = [];
                 groupedData[flight].push(row);
             });
@@ -131,7 +130,6 @@
         function renderFlightList() {
             const container = document.getElementById('flight-list');
             container.innerHTML = '';
-
             Object.keys(groupedData).sort().forEach(flight => {
                 const count = groupedData[flight].length;
                 const div = document.createElement('div');
@@ -153,23 +151,16 @@
             renderFlightList();
 
             let rows = groupedData[flight] || [];
-
-            // СОРТИРОВКА ПО ДАТЕ (старые сверху)
             rows.sort((a, b) => parseDate(a[1]) - parseDate(b[1]));
 
             document.getElementById('selected-flight-title').innerHTML = `Рейс <span class="font-bold">${flight}</span>`;
             document.getElementById('info-text').innerHTML = `Записей: <span class="font-bold">${rows.length}</span>`;
-
-            console.log(`%c=== ДАННЫЕ ДЛЯ РЕЙСА ${flight} (первые 3 строки после сортировки) ===`, 'color: orange; font-weight: bold');
-            console.table(rows.slice(0, 3));
 
             let html = `
             <table class="w-full">
                 <thead>
                     <tr>
                         <th>Дата</th>
-                        <th>Сегмент</th>
-                        <th>Маршрут</th>
                         <th class="text-right">Total AU</th>
                         <th class="text-right">Free SegBkd</th>
                         <th class="text-right">Загрузка</th>
@@ -179,8 +170,6 @@
 
             rows.forEach(row => {
                 const date     = row[1] || '-';
-                const segment  = row[2] || '-';
-                const route    = row[3] || '-';
                 const totalAU  = parseInt(row[5] || 0);
                 const freeSeg  = parseInt(row[6] || 0);
                 const occupancy = totalAU > 0 ? Math.round(((totalAU - freeSeg) / totalAU) * 100) : 0;
@@ -191,8 +180,6 @@
                 html += `
                     <tr>
                         <td>${date}</td>
-                        <td>${segment}</td>
-                        <td>${route}</td>
                         <td class="text-right font-semibold">${totalAU || '-'}</td>
                         <td class="text-right font-semibold">${freeSeg || '-'}</td>
                         <td class="text-right font-bold ${occClass}">${occupancy}%</td>
