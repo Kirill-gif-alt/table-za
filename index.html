@@ -21,11 +21,11 @@
         .occupancy-high { color: #22C55E; font-weight: 700; }
         .occupancy-med  { color: #F59E0B; font-weight: 700; }
         .occupancy-low  { color: #EF4444; font-weight: 700; }
-        .extra-flight { color: #8B00FF; font-weight: 700; }
+        .extra-flight { color: #8B00FF !important; font-weight: 700; }
         .flight-item { transition: all 0.2s; }
         .flight-item:hover { background: #f1f5f9; }
         .flight-item.active { background: #0474BC; color: white; }
-        .path-box { background: #f1f5f9; border: 2px dashed #0474BC; }
+        .path-box { background: #f1f5f9; border: 3px dashed #0474BC; }
     </style>
 </head>
 <body class="tailwind-ready bg-[#011B2E] text-white min-h-screen">
@@ -40,23 +40,23 @@
             <div class="px-6 pt-4 pb-2 text-xs uppercase tracking-widest text-gray-400 font-medium">Выберите рейс</div>
             <div id="flight-list" class="flex-1 overflow-auto px-3 py-2"></div>
 
-            <div class="p-6 border-t space-y-4">
-                <!-- Кнопка доступности -->
-                <div class="path-box p-4 rounded-3xl">
+            <div class="p-6 border-t space-y-6">
+                <!-- Доступность -->
+                <div class="path-box p-5 rounded-3xl">
                     <p class="text-xs text-gray-500 mb-1">Доступность (2 последних файла)</p>
-                    <p class="text-[#0474BC] text-sm font-medium">Y:\Отделы\11 КС\ООРП\Загрузка\База оп</p>
+                    <p class="text-[#0474BC] font-medium text-sm break-all">Y:\Отделы\11 КС\ООРП\Загрузка\База оп</p>
                     <button onclick="triggerAvailabilityUpload()" 
-                            class="mt-3 w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3 rounded-3xl font-medium">
+                            class="mt-4 w-full bg-[#0474BC] hover:bg-[#045CA4] text-white py-3.5 rounded-3xl font-medium text-lg">
                         ➕ Добавить файлы доступности
                     </button>
                 </div>
 
-                <!-- Кнопка продаж -->
-                <div class="path-box p-4 rounded-3xl">
+                <!-- Продажи -->
+                <div class="path-box p-5 rounded-3xl">
                     <p class="text-xs text-gray-500 mb-1">Продажи</p>
-                    <p class="text-[#8B00FF] text-sm font-medium">Y:\Отделы\11 КС\ООРП\Загрузка\csv</p>
+                    <p class="text-[#8B00FF] font-medium text-sm break-all">Y:\Отделы\11 КС\ООРП\Загрузка\csv</p>
                     <button onclick="triggerSalesUpload()" 
-                            class="mt-3 w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3 rounded-3xl font-medium">
+                            class="mt-4 w-full bg-[#8B00FF] hover:bg-[#6B00CC] text-white py-3.5 rounded-3xl font-medium text-lg">
                         ➕ Добавить файл продаж
                     </button>
                 </div>
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <!-- Основная таблица -->
+        <!-- Основная часть -->
         <div class="flex-1 flex flex-col">
             <div class="krasavia-header px-6 md:px-8 py-5 flex items-center justify-between">
                 <div id="selected-flight-title" class="text-2xl md:text-3xl font-semibold"></div>
@@ -84,7 +84,7 @@
     </div>
 
     <script>
-        // (Весь предыдущий рабочий код с группировкой доп.рейсов, KCY→KJA, продажами и т.д.)
+        // === ВЕСЬ РАБОЧИЙ КОД (с улучшенным выделением доп.рейсов) ===
         let allData = [];
         let salesMap = {};
         let groupedData = {};
@@ -136,9 +136,7 @@
             });
 
             renderFlightList();
-            if (Object.keys(groupedData).length > 0) {
-                selectFlight(Object.keys(groupedData).sort()[0]);
-            }
+            if (Object.keys(groupedData).length > 0) selectFlight(Object.keys(groupedData).sort()[0]);
         }
 
         function renderFlightList() {
@@ -148,8 +146,7 @@
                 const count = groupedData[baseFlight].length;
                 const div = document.createElement('div');
                 div.className = `flight-item flex items-center justify-between px-6 py-4 mx-2 rounded-2xl cursor-pointer mb-1 ${currentFlight === baseFlight ? 'active' : ''}`;
-                const firstRow = groupedData[baseFlight][0];
-                const route = firstRow[3] || baseFlight;
+                const route = groupedData[baseFlight][0][3] || baseFlight;
                 div.innerHTML = `
                     <div class="flex items-center gap-x-3">
                         <span class="text-xl">✈️</span>
@@ -205,7 +202,11 @@
             document.getElementById('table-container').classList.remove('hidden');
         }
 
-        function triggerAvailabilityUpload() { document.getElementById('availabilityInput').click(); }
+        function triggerAvailabilityUpload() {
+            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\База оп\n\nВыбери два последних файла доступности");
+            document.getElementById('availabilityInput').click();
+        }
+
         function handleAvailabilityUpload(e) {
             const files = Array.from(e.target.files);
             if (!files.length) return;
@@ -218,15 +219,17 @@
                     const parsed = lines.filter(l => l.trim()).map(l => l.split(';').map(f => f.trim()));
                     allData = allData.concat(parsed);
                     loaded++;
-                    if (loaded === files.length) {
-                        processData();
-                    }
+                    if (loaded === files.length) processData();
                 };
                 reader.readAsText(file, 'windows-1251');
             });
         }
 
-        function triggerSalesUpload() { document.getElementById('salesInput').click(); }
+        function triggerSalesUpload() {
+            alert("Открывай папку:\nY:\\Отделы\\11 КС\\ООРП\\Загрузка\\csv\n\nВыбери файл Tickets_SALE_Last14Days.csv");
+            document.getElementById('salesInput').click();
+        }
+
         function handleSalesUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -237,19 +240,16 @@
                 salesMap = {};
                 rows.forEach(row => {
                     if (row.length < 13) return;
-                    const flyDateRaw = row[7] || '';
-                    const reisRaw = row[12] || '';
-                    const date = normalizeDate(flyDateRaw);
-                    const flight = cleanFlight(reisRaw);
+                    const date = normalizeDate(row[7] || '');
+                    const flight = cleanFlight(row[12] || '');
                     if (!date || !flight) return;
                     const key = `${date}|${flight}`;
                     if (!salesMap[key]) salesMap[key] = {today:0, yesterday:0};
-                    // Пример определения сегодня/вчера (можно улучшить позже)
                     const todayStr = normalizeDate(rows[1] ? rows[1][0] : '');
                     if (date === todayStr) salesMap[key].today++;
                     else if (rows[2] && date === normalizeDate(rows[2][0])) salesMap[key].yesterday++;
                 });
-                alert('✅ Файл продаж успешно загружен!');
+                alert('✅ Продажи загружены!');
                 if (currentFlight) selectFlight(currentFlight);
             };
             reader.readAsText(file, 'windows-1251');
@@ -257,9 +257,7 @@
 
         function refreshData() { location.reload(); }
 
-        window.onload = () => {
-            console.log('%cКРАСАВИА загружена — пути прописаны', 'color:#0474BC;font-weight:bold');
-        };
+        window.onload = () => console.log('%cКРАСАВИА готова — пути прописаны', 'color:#0474BC;font-weight:bold');
     </script>
 </body>
 </html>
