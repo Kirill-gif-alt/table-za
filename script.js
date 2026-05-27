@@ -61,25 +61,6 @@ function isPastDate(dateStr) {
     return flightDate < today;
 }
 
-// ====================== НОВАЯ ЛОГИКА ПРОДАЖ ======================
-function getTodayYesterday() {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const format = (date) => {
-        const d = String(date.getDate()).padStart(2, '0');
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const y = date.getFullYear();
-        return `${d}.${m}.${y}`;
-    };
-
-    return {
-        today: format(today),
-        yesterday: format(yesterday)
-    };
-}
-
 function processData() {
     groupedData = {};
     allData.forEach(row => {
@@ -180,7 +161,7 @@ function selectFlight(base) {
     document.getElementById('table-container').classList.remove('hidden');
 }
 
-// ====================== ЗАГРУЗКА ПРОДАЖ (ПО СИСТЕМНОЙ ДАТЕ) ======================
+// ====================== ЗАГРУЗКА ПРОДАЖ ======================
 function triggerSalesUpload() { document.getElementById('salesInput').click(); }
 function handleSalesUpload(e) {
     const file = e.target.files[0];
@@ -191,11 +172,11 @@ function handleSalesUpload(e) {
         const lines = ev.target.result.split('\n').filter(l => l.trim());
         const rows = lines.slice(1).map(l => l.split(',').map(f => f.trim()));
 
-        const dates = getTodayYesterday();   // ← реальная дата системы
+        const dealDates = [...new Set(rows.map(r => r[5]).filter(Boolean))];
+        dealDates.sort((a, b) => parseInt(b) - parseInt(a));
 
-        console.log('%c=== СИСТЕМНЫЕ ДАТЫ ===', 'color:lime');
-        console.log('Сегодня:', dates.today);
-        console.log('Вчера:', dates.yesterday);
+        const todayDeal = dealDates[0] ? normalizeDate(dealDates[0]) : null;
+        const yesterdayDeal = dealDates[1] ? normalizeDate(dealDates[1]) : null;
 
         salesMap = {};
 
@@ -213,32 +194,21 @@ function handleSalesUpload(e) {
             if (!salesMap[key]) salesMap[key] = {today: 0, yesterday: 0};
 
             const dealNorm = normalizeDate(dealDateRaw);
-
-            if (dealNorm === dates.today) salesMap[key].today++;
-            else if (dealNorm === dates.yesterday) salesMap[key].yesterday++;
+            if (dealNorm === todayDeal) salesMap[key].today++;
+            else if (dealNorm === yesterdayDeal) salesMap[key].yesterday++;
         });
 
-        alert(`✅ Продажи загружены!\nСегодня (${dates.today}): продажи посчитаны\nВчера (${dates.yesterday}): продажи посчитаны`);
-        if (currentFlight) selectFlight(currentFlight);
+        alert('✅ Продажи загружены!');
+
+        // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ТАБЛИЦЫ
+        if (currentFlight) {
+            selectFlight(currentFlight);
+        } else if (Object.keys(groupedData).length > 0) {
+            const first = Object.keys(groupedData).sort()[0];
+            selectFlight(first);
+        }
     };
     reader.readAsText(file, 'windows-1251');
-}
-
-function getTodayYesterday() {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const format = (d) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        return `${day}.${month}.${d.getFullYear()}`;
-    };
-
-    return {
-        today: format(today),
-        yesterday: format(yesterday)
-    };
 }
 
 // ====================== ОСТАЛЬНЫЕ ФУНКЦИИ ======================
